@@ -11,8 +11,7 @@ module fl {
 
 		public clone():egret.Event
 		{
-			var tmpEvent:fl.GlobalEvent = new fl.GlobalEvent(this.type,this.bubbles,this.cancelable);
-			tmpEvent.data = this.data;
+			var tmpEvent:fl.GlobalEvent = new fl.GlobalEvent(this.type,this.data, this.bubbles,this.cancelable);
 			return tmpEvent;
 		}
 

@@ -3,8 +3,8 @@
 	"version": "2.5.4",
 	"modules": [
 		{
-			"name": "fl_game",
-			"description": "fl_game",
+			"name": "flgame",
+			"description": "fl game framework",
 			"files": [],
 			"root": "src"
 		}
