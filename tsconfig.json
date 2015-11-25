@@ -2,9 +2,13 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "ES5",
+        "outDir": "bin",
         "outFile": "bin/flgame.js",
         "rootDir": "src",
         "sourceMap": true,
         "declaration": true
-    }
+    },
+     "exclude": [
+        "bin"
+     ]
 }

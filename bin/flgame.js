@@ -90,8 +90,7 @@ var fl;
             this.data = data;
         }
         GlobalEvent.prototype.clone = function () {
-            var tmpEvent = new fl.GlobalEvent(this.type, this.bubbles, this.cancelable);
-            tmpEvent.data = this.data;
+            var tmpEvent = new fl.GlobalEvent(this.type, this.data, this.bubbles, this.cancelable);
             return tmpEvent;
         };
         return GlobalEvent;
