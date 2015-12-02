@@ -1,3 +1,4 @@
+
 /**
  * Created by feir on 2015/11/14.
  */
@@ -6,8 +7,9 @@ var fl;
     function isNumber(value) {
         var type = (typeof value);
         if (type === "object") {
-            type = egret.getQualifiedClassName(value);
-            return type === "Number";
+            type = Object.prototype.toString.call(value);
+            ;
+            return type === "[object Number]";
         }
         else {
             return type === "number";
@@ -17,8 +19,9 @@ var fl;
     function isString(value) {
         var type = (typeof value);
         if (type === "object") {
-            type = egret.getQualifiedClassName(value);
-            return type === "String";
+            type = Object.prototype.toString.call(value);
+            ;
+            return type === "[object String]";
         }
         else {
             return type === "string";
@@ -47,22 +50,18 @@ var fl;
             return true;
         if (!value || !superValue)
             return false;
-        var proto;
-        var type1 = (typeof value);
-        if (type1 === "object") {
-            types = Object.getPrototypeOf(value);
+        var types;
+        if (isString(value)) {
+            types = [value];
         }
         else {
-            proto = value.prototype;
+            var proto = value.prototype ? value.prototype : Object.getPrototypeOf(value);
+            types = proto ? proto.__types__ : null;
+            if (!types) {
+                return false;
+            }
         }
-        var type2 = (typeof superValue);
-        if (type2 !== "string") {
-            superValue = egret.getQualifiedClassName(superValue);
-        }
-        var types = proto ? proto.__types__ : null;
-        if (!types) {
-            return false;
-        }
+        superValue = getClassName(superValue);
         return (types.indexOf(superValue) !== -1);
     }
     fl.is = is;
@@ -304,8 +303,25 @@ var fl;
     fl.getColor = getColor;
 })(fl || (fl = {}));
 fl.LINE_BREAKS = new RegExp("[\r\n]+", "img");
-fl.COLOR_TEXT = "<font {0} {1} {2}>{3}</font>";
+fl.COLOR_TEXT = "\<font {0} {1} {2}\>{3}\</font\>";
 fl.HTML_TAG = /<[^>]+>/g;
+
+var fl;
+(function (fl) {
+    var Error = (function () {
+        function Error(message, name) {
+            if (message === void 0) { message = ""; }
+            if (name === void 0) { name = 0; }
+            this.name = name;
+            this.message = message;
+        }
+        var d = __define,c=Error;p=c.prototype;
+        return Error;
+    })();
+    fl.Error = Error;
+    egret.registerClass(Error,"fl.Error");
+})(fl || (fl = {}));
+
 /**
  * Created by huitao on 2015/6/25.
  */
@@ -315,7 +331,8 @@ var fl;
         function Dictionary(weak) {
             this.map = new Array();
         }
-        Dictionary.prototype.getItem = function (key, val) {
+        var d = __define,c=Dictionary;p=c.prototype;
+        p.getItem = function (key, val) {
             for (var i = 0; i < this.map.length; i++) {
                 if (this.map[i][0] == key)
                     return this.map[i][1];
@@ -325,7 +342,7 @@ var fl;
             }
             return val;
         };
-        Dictionary.prototype.setItem = function (key, val) {
+        p.setItem = function (key, val) {
             for (var i = 0; i < this.map.length; i++) {
                 if (this.map[i][0] == key) {
                     this.map[i][1] = val;
@@ -335,7 +352,7 @@ var fl;
             this.map.push([key, val]);
             return val;
         };
-        Dictionary.prototype.delItem = function (key) {
+        p.delItem = function (key) {
             for (var i = 0; i < this.map.length; i++) {
                 if (this.map[i][0] == key) {
                     this.map.splice(i, 1);
@@ -343,7 +360,7 @@ var fl;
                 }
             }
         };
-        Dictionary.prototype.hasOwnProperty = function (key) {
+        p.hasOwnProperty = function (key) {
             if (this.map == undefined || this.map.length == undefined) {
                 return false;
             }
@@ -357,247 +374,464 @@ var fl;
         return Dictionary;
     })();
     fl.Dictionary = Dictionary;
+    egret.registerClass(Dictionary,"fl.Dictionary");
 })(fl || (fl = {}));
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+
 var fl;
 (function (fl) {
-    var Actor = (function (_super) {
-        __extends(Actor, _super);
-        function Actor() {
+    fl.ICommandMap = "fl.ICommandMap";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IContext = "fl.IContext";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IContextProvider = "fl.IContextProvider";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IEventMap = "fl.IEventMap";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IInjector = "fl.IInjector";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IMediator = "fl.IMediator";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IMediatorMap = "fl.IMediatorMap";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IReflector = "fl.IReflector";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    fl.IViewMap = "fl.IViewMap";
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectionConfig = (function (_super) {
+        __extends(InjectionConfig, _super);
+        function InjectionConfig(request, injectionName) {
             _super.call(this);
+            this.request = request;
+            this.injectionName = injectionName;
         }
-        Object.defineProperty(Actor.prototype, "eventDispatcher", {
-            get: function () {
-                return this._eventDispatcher;
-            },
-            set: function (value) {
-                this._eventDispatcher = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Actor.prototype, "eventMap", {
-            get: function () {
-                return this._eventMap || (this._eventMap = new fl.EventMap(this.eventDispatcher));
-            },
-            set: function (value) {
-                this._eventMap = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Actor.prototype.dispatch = function (event) {
-            if (this.eventDispatcher.hasEventListener(event.type))
-                return this.eventDispatcher.dispatchEvent(event);
-            return false;
-        };
-        return Actor;
-    })(egret.HashObject);
-    fl.Actor = Actor;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var Command = (function (_super) {
-        __extends(Command, _super);
-        function Command() {
-            _super.call(this);
-        }
-        Command.prototype.execute = function () {
-        };
-        Command.prototype.dispatch = function (event) {
-            if (this.eventDispatcher.hasEventListener(event.type))
-                return this.eventDispatcher.dispatchEvent(event);
-            return false;
-        };
-        return Command;
-    })(egret.HashObject);
-    fl.Command = Command;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var Context = (function (_super) {
-        __extends(Context, _super);
-        function Context(contextView, autoStartup) {
-            if (contextView === void 0) { contextView = null; }
-            if (autoStartup === void 0) { autoStartup = true; }
-            _super.call(this);
-            this._autoStartup = false;
-            this._contextView = contextView;
-            this._autoStartup = autoStartup;
-            if (this._contextView) {
-                this.mapInjections();
-                this.checkAutoStartup();
+        var d = __define,c=InjectionConfig;p=c.prototype;
+        p.getResponse = function (injector) {
+            var ij = this.m_injector || injector;
+            if (this.m_result) {
+                return this.m_result.getResponse(ij);
             }
-        }
-        Context.prototype.startup = function () {
-            this.dispatchEvent(new fl.ContextEvent(fl.ContextEvent.STARTUP_COMPLETE));
-        };
-        Context.prototype.shutdown = function () {
-            this.dispatchEvent(new fl.ContextEvent(fl.ContextEvent.SHUTDOWN_COMPLETE));
-        };
-        Object.defineProperty(Context.prototype, "contextView", {
-            get: function () {
-                return this._contextView;
-            },
-            set: function (value) {
-                if (value == this._contextView)
-                    return;
-                if (this._contextView)
-                    throw new fl.ContextError(fl.ContextError.E_CONTEXT_VIEW_OVR);
-                this._contextView = value;
-                this.mapInjections();
-                this.checkAutoStartup();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Context.prototype, "injector", {
-            get: function () {
-                return this._injector = this._injector || this.createInjector();
-            },
-            set: function (value) {
-                this._injector = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Context.prototype, "reflector", {
-            get: function () {
-                return this._reflector = this._reflector || new fl.Reflector();
-            },
-            set: function (value) {
-                this._reflector = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Context.prototype, "commandMap", {
-            get: function () {
-                return this._commandMap = this._commandMap || new fl.CommandMap(this.eventDispatcher, this.createChildInjector(), this.reflector);
-            },
-            set: function (value) {
-                this._commandMap = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Context.prototype, "mediatorMap", {
-            get: function () {
-                return this._mediatorMap = this._mediatorMap || new fl.MediatorMap(this.contextView, this.createChildInjector(), this.reflector);
-            },
-            set: function (value) {
-                this._mediatorMap = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Context.prototype, "viewMap", {
-            get: function () {
-                return this._viewMap = this._viewMap || new fl.ViewMap(this.contextView, this.injector);
-            },
-            set: function (value) {
-                this._viewMap = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Context.prototype.mapInjections = function () {
-            this.injector.mapValue(fl.IReflector, this.reflector);
-            this.injector.mapValue(fl.IInjector, this.injector);
-            this.injector.mapValue("egret.IEventDispatcher", this.eventDispatcher);
-            this.injector.mapValue(egret.DisplayObjectContainer, this.contextView);
-            this.injector.mapValue(fl.ICommandMap, this.commandMap);
-            this.injector.mapValue(fl.IMediatorMap, this.mediatorMap);
-            this.injector.mapValue(fl.IViewMap, this.viewMap);
-            this.injector.mapClass(fl.IEventMap, fl.EventMap);
-        };
-        Context.prototype.checkAutoStartup = function () {
-            if (this._autoStartup && this.contextView) {
-                this.contextView.stage ? this.startup() : this.contextView.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddedToStage, this, false, 0);
+            var parentConfig = ij.getAncestorMapping(this.request, this.injectionName);
+            if (parentConfig) {
+                return parentConfig.getResponse(injector);
             }
+            return null;
         };
-        Context.prototype.onAddedToStage = function (e) {
-            this.contextView.removeEventListener(egret.Event.ADDED_TO_STAGE, this.onAddedToStage, this);
-            this.startup();
+        p.hasResponse = function (injector) {
+            if (this.m_result) {
+                return true;
+            }
+            var ij = this.m_injector || injector;
+            var parentConfig = ij.getAncestorMapping(this.request, this.injectionName);
+            return parentConfig != null;
         };
-        Context.prototype.createInjector = function () {
+        p.hasOwnResponse = function () {
+            return this.m_result != null;
+        };
+        p.setResult = function (result) {
+            if (this.m_result != null && result != null) {
+                console.log('Warning: Injector already has a rule for type "' + fl.getClassName(this.request) + '", named "' + this.injectionName + '".\n ' + 'If you have overwritten this mapping intentionally you can use ' + '"injector.unmap()" prior to your replacement mapping in order to ' + 'avoid seeing this message.');
+            }
+            this.m_result = result;
+        };
+        p.setInjector = function (injector) {
+            this.m_injector = injector;
+        };
+        return InjectionConfig;
+    })(egret.HashObject);
+    fl.InjectionConfig = InjectionConfig;
+    egret.registerClass(InjectionConfig,"fl.InjectionConfig");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectionType = (function (_super) {
+        __extends(InjectionType, _super);
+        function InjectionType() {
+            _super.apply(this, arguments);
+        }
+        var d = __define,c=InjectionType;p=c.prototype;
+        return InjectionType;
+    })(egret.HashObject);
+    fl.InjectionType = InjectionType;
+    egret.registerClass(InjectionType,"fl.InjectionType");
+})(fl || (fl = {}));
+fl.InjectionType.VALUE = 0;
+fl.InjectionType.CLASS = 1;
+fl.InjectionType.SINGLETON = 2;
+
+var fl;
+(function (fl) {
+    var Injector = (function (_super) {
+        __extends(Injector, _super);
+        function Injector() {
+            _super.call(this);
+            this.m_mappings = new fl.Dictionary();
+            this.m_injecteeDescriptions = fl.Injector.INJECTION_POINTS_CACHE;
+            this.m_attendedToInjectees = new fl.Dictionary(true);
+        }
+        var d = __define,c=Injector;p=c.prototype;
+        p.mapValue = function (whenAskedFor, useValue, named) {
+            if (named === void 0) { named = ""; }
+            var config = this.getMapping(whenAskedFor, named);
+            config.setResult(new fl.InjectValueResult(useValue));
+            return config;
+        };
+        p.mapClass = function (whenAskedFor, instantiateClass, named) {
+            if (named === void 0) { named = ""; }
+            var config = this.getMapping(whenAskedFor, named);
+            config.setResult(new fl.InjectClassResult(instantiateClass));
+            return config;
+        };
+        p.mapSingleton = function (whenAskedFor, named) {
+            if (named === void 0) { named = ""; }
+            return this.mapSingletonOf(whenAskedFor, whenAskedFor, named);
+        };
+        p.mapSingletonOf = function (whenAskedFor, useSingletonOf, named) {
+            if (named === void 0) { named = ""; }
+            var config = this.getMapping(whenAskedFor, named);
+            config.setResult(new fl.InjectSingletonResult(useSingletonOf));
+            return config;
+        };
+        p.mapRule = function (whenAskedFor, useRule, named) {
+            if (named === void 0) { named = ""; }
+            var config = this.getMapping(whenAskedFor, named);
+            config.setResult(new fl.InjectOtherRuleResult(useRule));
+            return useRule;
+        };
+        p.getMapping = function (whenAskedFor, named) {
+            if (named === void 0) { named = ""; }
+            var requestName = fl.getClassName(whenAskedFor);
+            var config = this.m_mappings.getItem(requestName + '#' + named);
+            if (!config) {
+                config = this.m_mappings.setItem(requestName + '#' + named, new fl.InjectionConfig(whenAskedFor, named));
+            }
+            return config;
+        };
+        p.injectInto = function (target) {
+            if (this.m_attendedToInjectees.getItem(target)) {
+                return;
+            }
+            this.m_attendedToInjectees.setItem(target, true);
+        };
+        p.instantiate = function (clazz) {
+            var injecteeDescription = this.m_injecteeDescriptions.getItem(clazz);
+            if (!injecteeDescription) {
+                injecteeDescription = this.getInjectionPoints(clazz);
+            }
+            var injectionPoint = injecteeDescription.ctor;
+            var instance = injectionPoint.applyInjection(clazz, this);
+            this.injectInto(instance);
+            return instance;
+        };
+        p.unmap = function (clazz, named) {
+            if (named === void 0) { named = ""; }
+            var mapping = this.getConfigurationForRequest(clazz, named);
+            if (!mapping) {
+                throw new fl.InjectorError('Error while removing an injector mapping: ' + 'No mapping defined for class ' + fl.getClassName(clazz) + ', named "' + named + '"');
+            }
+            mapping.setResult(null);
+        };
+        p.hasMapping = function (clazz, named) {
+            if (named === void 0) { named = ''; }
+            var mapping = this.getConfigurationForRequest(clazz, named);
+            if (!mapping) {
+                return false;
+            }
+            return mapping.hasResponse(this);
+        };
+        p.getInstance = function (clazz, named) {
+            if (named === void 0) { named = ''; }
+            var mapping = this.getConfigurationForRequest(clazz, named);
+            if (!mapping || !mapping.hasResponse(this)) {
+                throw new fl.InjectorError('Error while getting mapping response: ' + 'No mapping defined for class ' + fl.getClassName(clazz) + ', named "' + named + '"');
+            }
+            return mapping.getResponse(this);
+        };
+        p.createChildInjector = function () {
             var injector = new fl.Injector();
+            injector.setParentInjector(this);
             return injector;
         };
-        Context.prototype.createChildInjector = function () {
-            return this.injector.createChildInjector();
+        p.setParentInjector = function (parentInjector) {
+            if (this.m_parentInjector && !parentInjector) {
+                this.m_attendedToInjectees = new fl.Dictionary(true);
+            }
+            this.m_parentInjector = parentInjector;
+            if (parentInjector) {
+                this.m_attendedToInjectees = parentInjector.attendedToInjectees;
+            }
         };
-        return Context;
-    })(fl.ContextBase);
-    fl.Context = Context;
+        p.getParentInjector = function () {
+            return this.m_parentInjector;
+        };
+        Injector.purgeInjectionPointsCache = function () {
+            fl.Injector.INJECTION_POINTS_CACHE = new fl.Dictionary(true);
+        };
+        p.getAncestorMapping = function (whenAskedFor, named) {
+            if (named === void 0) { named = null; }
+            var parent = this.m_parentInjector;
+            while (parent) {
+                var parentConfig = parent.getConfigurationForRequest(whenAskedFor, named, false);
+                if (parentConfig && parentConfig.hasOwnResponse()) {
+                    return parentConfig;
+                }
+                parent = parent.getParentInjector();
+            }
+            return null;
+        };
+        d(p, "attendedToInjectees"
+            ,function () {
+                return this.m_attendedToInjectees;
+            }
+            ,function (value) {
+                this.m_attendedToInjectees = value;
+            }
+        );
+        p.getInjectionPoints = function (clazz) {
+            var injectionPoints = [];
+            var ctorInjectionPoint = new fl.NoParamsConstructorInjectionPoint();
+            var injecteeDescription = new InjecteeDescription(ctorInjectionPoint, injectionPoints);
+            this.m_injecteeDescriptions.setItem(clazz, injecteeDescription);
+            return injecteeDescription;
+        };
+        p.getConfigurationForRequest = function (clazz, named, traverseAncestors) {
+            if (traverseAncestors === void 0) { traverseAncestors = true; }
+            var requestName = fl.getClassName(clazz);
+            var config = this.m_mappings.getItem(requestName + '#' + named);
+            if (!config && traverseAncestors && this.m_parentInjector && this.m_parentInjector.hasMapping(clazz, named)) {
+                config = this.getAncestorMapping(clazz, named);
+            }
+            return config;
+        };
+        return Injector;
+    })(egret.HashObject);
+    fl.Injector = Injector;
+    egret.registerClass(Injector,"fl.Injector",["fl.IInjector"]);
+    var InjecteeDescription = (function (_super) {
+        __extends(InjecteeDescription, _super);
+        function InjecteeDescription(ctor, injectionPoints) {
+            _super.call(this);
+            this.ctor = ctor;
+            this.injectionPoints = injectionPoints;
+        }
+        var d = __define,c=InjecteeDescription;p=c.prototype;
+        return InjecteeDescription;
+    })(egret.HashObject);
+    egret.registerClass(InjecteeDescription,"InjecteeDescription");
 })(fl || (fl = {}));
+fl.Injector.INJECTION_POINTS_CACHE = new fl.Dictionary(true);
+
 var fl;
 (function (fl) {
-    var Mediator = (function (_super) {
-        __extends(Mediator, _super);
-        function Mediator() {
+    var InjectorError = (function (_super) {
+        __extends(InjectorError, _super);
+        function InjectorError(message, name) {
+            if (message === void 0) { message = ""; }
+            if (name === void 0) { name = 0; }
+            _super.call(this, message, name);
+        }
+        var d = __define,c=InjectorError;p=c.prototype;
+        return InjectorError;
+    })(fl.Error);
+    fl.InjectorError = InjectorError;
+    egret.registerClass(InjectorError,"fl.InjectorError");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var Reflector = (function (_super) {
+        __extends(Reflector, _super);
+        function Reflector() {
             _super.call(this);
         }
-        Mediator.prototype.preRemove = function () {
-            if (this._eventMap)
-                this._eventMap.unmapListeners();
-            _super.prototype.preRemove.call(this);
+        var d = __define,c=Reflector;p=c.prototype;
+        p.classExtendsOrImplements = function (classOrClassName, superclass) {
+            var actualClass;
+            if (fl.isString(classOrClassName)) {
+                try {
+                    actualClass = egret.getDefinitionByName(classOrClassName);
+                }
+                catch (e) {
+                    throw new fl.Error("The class name " + classOrClassName + " is not valid because of " + e + "\n" + e.getStackTrace());
+                }
+            }
+            else {
+                actualClass = classOrClassName;
+            }
+            if (!actualClass) {
+                throw new fl.Error("The parameter classOrClassName must be a valid Class " + "instance or fully qualified class name.");
+            }
+            return fl.is(actualClass, superclass);
         };
-        Object.defineProperty(Mediator.prototype, "eventDispatcher", {
-            get: function () {
-                return this._eventDispatcher;
-            },
-            set: function (value) {
-                this._eventDispatcher = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Mediator.prototype, "eventMap", {
-            get: function () {
-                return this._eventMap || (this._eventMap = new fl.EventMap(this.eventDispatcher));
-            },
-            set: function (value) {
-                this._eventMap = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Mediator.prototype.dispatch = function (event) {
-            if (this.eventDispatcher.hasEventListener(event.type))
-                return this.eventDispatcher.dispatchEvent(event);
-            return false;
+        p.getClass = function (value) {
+            if (fl.isClass(value)) {
+                return value;
+            }
+            return value.constructor;
         };
-        Mediator.prototype.addViewListener = function (type, listener, eventClass, useCapture, priority) {
-            if (eventClass === void 0) { eventClass = null; }
-            if (useCapture === void 0) { useCapture = false; }
-            if (priority === void 0) { priority = 0; }
-            this.eventMap.mapListener(this.viewComponent, type, listener, eventClass, useCapture, priority);
+        p.getFQCN = function (value, replaceColons) {
+            if (replaceColons === void 0) { replaceColons = false; }
+            return fl.getClassName(value, replaceColons);
         };
-        Mediator.prototype.removeViewListener = function (type, listener, eventClass, useCapture) {
-            if (eventClass === void 0) { eventClass = null; }
-            if (useCapture === void 0) { useCapture = false; }
-            this.eventMap.unmapListener(this.viewComponent, type, listener, eventClass, useCapture);
-        };
-        Mediator.prototype.addContextListener = function (type, listener, eventClass, useCapture, priority) {
-            if (eventClass === void 0) { eventClass = null; }
-            if (useCapture === void 0) { useCapture = false; }
-            if (priority === void 0) { priority = 0; }
-            this.eventMap.mapListener(this.eventDispatcher, type, listener, eventClass, useCapture, priority);
-        };
-        Mediator.prototype.removeContextListener = function (type, listener, eventClass, useCapture) {
-            if (eventClass === void 0) { eventClass = null; }
-            if (useCapture === void 0) { useCapture = false; }
-            this.eventMap["unmapListener"](this.eventDispatcher, type, listener, eventClass, useCapture);
-        };
-        return Mediator;
-    })(fl.MediatorBase);
-    fl.Mediator = Mediator;
+        return Reflector;
+    })(egret.HashObject);
+    fl.Reflector = Reflector;
+    egret.registerClass(Reflector,"fl.Reflector",["fl.IReflector"]);
 })(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectionPoint = (function (_super) {
+        __extends(InjectionPoint, _super);
+        function InjectionPoint(injector) {
+            _super.call(this);
+        }
+        var d = __define,c=InjectionPoint;p=c.prototype;
+        p.applyInjection = function (target, injector) {
+            return target;
+        };
+        return InjectionPoint;
+    })(egret.HashObject);
+    fl.InjectionPoint = InjectionPoint;
+    egret.registerClass(InjectionPoint,"fl.InjectionPoint");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var NoParamsConstructorInjectionPoint = (function (_super) {
+        __extends(NoParamsConstructorInjectionPoint, _super);
+        function NoParamsConstructorInjectionPoint() {
+            _super.call(this, null);
+        }
+        var d = __define,c=NoParamsConstructorInjectionPoint;p=c.prototype;
+        p.applyInjection = function (target, injector) {
+            return new target();
+        };
+        return NoParamsConstructorInjectionPoint;
+    })(fl.InjectionPoint);
+    fl.NoParamsConstructorInjectionPoint = NoParamsConstructorInjectionPoint;
+    egret.registerClass(NoParamsConstructorInjectionPoint,"fl.NoParamsConstructorInjectionPoint");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectionResult = (function (_super) {
+        __extends(InjectionResult, _super);
+        function InjectionResult() {
+            _super.call(this);
+        }
+        var d = __define,c=InjectionResult;p=c.prototype;
+        p.getResponse = function (injector) {
+            return null;
+        };
+        return InjectionResult;
+    })(egret.HashObject);
+    fl.InjectionResult = InjectionResult;
+    egret.registerClass(InjectionResult,"fl.InjectionResult");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectClassResult = (function (_super) {
+        __extends(InjectClassResult, _super);
+        function InjectClassResult(responseType) {
+            _super.call(this);
+            this.m_responseType = responseType;
+        }
+        var d = __define,c=InjectClassResult;p=c.prototype;
+        p.getResponse = function (injector) {
+            return injector.instantiate(this.m_responseType);
+        };
+        return InjectClassResult;
+    })(fl.InjectionResult);
+    fl.InjectClassResult = InjectClassResult;
+    egret.registerClass(InjectClassResult,"fl.InjectClassResult");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectOtherRuleResult = (function (_super) {
+        __extends(InjectOtherRuleResult, _super);
+        function InjectOtherRuleResult(rule) {
+            _super.call(this);
+            this.m_rule = rule;
+        }
+        var d = __define,c=InjectOtherRuleResult;p=c.prototype;
+        p.getResponse = function (injector) {
+            return this.m_rule.getResponse(injector);
+        };
+        return InjectOtherRuleResult;
+    })(fl.InjectionResult);
+    fl.InjectOtherRuleResult = InjectOtherRuleResult;
+    egret.registerClass(InjectOtherRuleResult,"fl.InjectOtherRuleResult");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectSingletonResult = (function (_super) {
+        __extends(InjectSingletonResult, _super);
+        function InjectSingletonResult(responseType) {
+            _super.call(this);
+            this.m_responseType = responseType;
+        }
+        var d = __define,c=InjectSingletonResult;p=c.prototype;
+        p.getResponse = function (injector) {
+            return this.m_response = this.m_response || this.createResponse(injector);
+        };
+        p.createResponse = function (injector) {
+            return injector.instantiate(this.m_responseType);
+        };
+        return InjectSingletonResult;
+    })(fl.InjectionResult);
+    fl.InjectSingletonResult = InjectSingletonResult;
+    egret.registerClass(InjectSingletonResult,"fl.InjectSingletonResult");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var InjectValueResult = (function (_super) {
+        __extends(InjectValueResult, _super);
+        function InjectValueResult(value) {
+            _super.call(this);
+            this.m_value = value;
+        }
+        var d = __define,c=InjectValueResult;p=c.prototype;
+        p.getResponse = function (injector) {
+            return this.m_value;
+        };
+        return InjectValueResult;
+    })(fl.InjectionResult);
+    fl.InjectValueResult = InjectValueResult;
+    egret.registerClass(InjectValueResult,"fl.InjectValueResult");
+})(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var CommandMap = (function (_super) {
@@ -611,7 +845,8 @@ var fl;
             this.verifiedCommandClasses = new fl.Dictionary(false);
             this.detainedCommands = new fl.Dictionary(false);
         }
-        CommandMap.prototype.mapEvent = function (eventType, commandClass, eventClass, oneshot) {
+        var d = __define,c=CommandMap;p=c.prototype;
+        p.mapEvent = function (eventType, commandClass, eventClass, oneshot) {
             if (eventClass === void 0) { eventClass = null; }
             if (oneshot === void 0) { oneshot = false; }
             var _self__ = this;
@@ -628,7 +863,7 @@ var fl;
             this.eventDispatcher.addEventListener(eventType, callback, null, false, 0);
             callbacksByCommandClass.setItem(commandClass, callback);
         };
-        CommandMap.prototype.unmapEvent = function (eventType, commandClass, eventClass) {
+        p.unmapEvent = function (eventType, commandClass, eventClass) {
             if (eventClass === void 0) { eventClass = null; }
             var eventClassMap = this.eventTypeMap.getItem(eventType);
             if (eventClassMap == null)
@@ -642,7 +877,7 @@ var fl;
             this.eventDispatcher.removeEventListener(eventType, callback, null, false);
             callbacksByCommandClass.delItem(commandClass);
         };
-        CommandMap.prototype.unmapEvents = function () {
+        p.unmapEvents = function () {
             for (var forinvar__ in this.eventTypeMap.map) {
                 var map = this.eventTypeMap.map[forinvar__];
                 var eventType = map[0];
@@ -657,7 +892,7 @@ var fl;
             }
             this.eventTypeMap = new fl.Dictionary(false);
         };
-        CommandMap.prototype.hasEventCommand = function (eventType, commandClass, eventClass) {
+        p.hasEventCommand = function (eventType, commandClass, eventClass) {
             if (eventClass === void 0) { eventClass = null; }
             var eventClassMap = this.eventTypeMap.getItem(eventType);
             if (eventClassMap == null)
@@ -667,7 +902,7 @@ var fl;
                 return false;
             return callbacksByCommandClass.getItem(commandClass) != null;
         };
-        CommandMap.prototype.execute = function (commandClass, payload, payloadClass, named) {
+        p.execute = function (commandClass, payload, payloadClass, named) {
             if (payload === void 0) { payload = null; }
             if (payloadClass === void 0) { payloadClass = null; }
             if (named === void 0) { named = ''; }
@@ -686,15 +921,15 @@ var fl;
             }
             command.execute();
         };
-        CommandMap.prototype.detain = function (command) {
+        p.detain = function (command) {
             this.detainedCommands.setItem(command, true);
         };
-        CommandMap.prototype.release = function (command) {
+        p.release = function (command) {
             this.detainedCommands.delItem(command);
         };
-        CommandMap.prototype.verifyCommandClass = function (commandClass) {
+        p.verifyCommandClass = function (commandClass) {
         };
-        CommandMap.prototype.routeEventToCommand = function (event, commandClass, oneshot, originalEventClass) {
+        p.routeEventToCommand = function (event, commandClass, oneshot, originalEventClass) {
             if (!(fl.is(event, originalEventClass)))
                 return false;
             this.execute(commandClass, event);
@@ -705,7 +940,9 @@ var fl;
         return CommandMap;
     })(egret.HashObject);
     fl.CommandMap = CommandMap;
+    egret.registerClass(CommandMap,"fl.CommandMap",["fl.ICommandMap"]);
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var ContextBase = (function (_super) {
@@ -714,48 +951,49 @@ var fl;
             _super.call(this);
             this._eventDispatcher = this.createEventDispatcher();
         }
-        ContextBase.prototype.createEventDispatcher = function () {
+        var d = __define,c=ContextBase;p=c.prototype;
+        p.createEventDispatcher = function () {
             return new egret.EventDispatcher(this);
         };
-        Object.defineProperty(ContextBase.prototype, "eventDispatcher", {
-            get: function () {
+        d(p, "eventDispatcher"
+            ,function () {
                 return this._eventDispatcher;
-            },
-            set: function (value) {
+            }
+            ,function (value) {
                 this._eventDispatcher = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        ContextBase.prototype.once = function (type, listener, thisObject, useCapture, priority) {
+            }
+        );
+        p.once = function (type, listener, thisObject, useCapture, priority) {
             if (useCapture === void 0) { useCapture = false; }
             if (priority === void 0) { priority = 0; }
             this.eventDispatcher.once(type, listener, thisObject, useCapture, priority);
         };
-        ContextBase.prototype.addEventListener = function (type, listener, thisObject, useCapture, priority) {
+        p.addEventListener = function (type, listener, thisObject, useCapture, priority) {
             if (useCapture === void 0) { useCapture = false; }
             if (priority === void 0) { priority = 0; }
             this.eventDispatcher.addEventListener(type, listener, thisObject, useCapture, priority);
         };
-        ContextBase.prototype.dispatchEvent = function (event) {
+        p.dispatchEvent = function (event) {
             if (this.eventDispatcher.hasEventListener(event.type))
                 return this.eventDispatcher.dispatchEvent(event);
             return false;
         };
-        ContextBase.prototype.hasEventListener = function (type) {
+        p.hasEventListener = function (type) {
             return this.eventDispatcher.hasEventListener(type);
         };
-        ContextBase.prototype.removeEventListener = function (type, listener, thisObject, useCapture) {
+        p.removeEventListener = function (type, listener, thisObject, useCapture) {
             if (useCapture === void 0) { useCapture = false; }
             this.eventDispatcher.removeEventListener(type, listener, thisObject, useCapture);
         };
-        ContextBase.prototype.willTrigger = function (type) {
+        p.willTrigger = function (type) {
             return this.eventDispatcher.willTrigger(type);
         };
         return ContextBase;
     })(egret.HashObject);
     fl.ContextBase = ContextBase;
+    egret.registerClass(ContextBase,"fl.ContextBase",["fl.IContext","egret.IEventDispatcher"]);
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var ContextError = (function () {
@@ -765,9 +1003,11 @@ var fl;
             this.message = message;
             this.name = String(id);
         }
+        var d = __define,c=ContextError;p=c.prototype;
         return ContextError;
     })();
     fl.ContextError = ContextError;
+    egret.registerClass(ContextError,"fl.ContextError");
 })(fl || (fl = {}));
 fl.ContextError.E_COMMANDMAP_NOIMPL = 'Command Class does not implement an execute() method';
 fl.ContextError.E_COMMANDMAP_OVR = 'Cannot overwrite map';
@@ -777,6 +1017,7 @@ fl.ContextError.E_EVENTMAP_NOSNOOPING = 'Listening to the context eventDispatche
 fl.ContextError.E_CONTEXT_INJECTOR = 'The ContextBase does not specify a concrete IInjector. Please override the injector getter in your concrete or abstract Context.';
 fl.ContextError.E_CONTEXT_REFLECTOR = 'The ContextBase does not specify a concrete IReflector. Please override the reflector getter in your concrete or abstract Context.';
 fl.ContextError.E_CONTEXT_VIEW_OVR = 'Context contextView must only be set once';
+
 var fl;
 (function (fl) {
     var ContextEvent = (function (_super) {
@@ -786,27 +1027,28 @@ var fl;
             _super.call(this, type);
             this._body = body;
         }
-        Object.defineProperty(ContextEvent.prototype, "body", {
-            get: function () {
+        var d = __define,c=ContextEvent;p=c.prototype;
+        d(p, "body"
+            ,function () {
                 return this._body;
-            },
-            set: function (value) {
+            }
+            ,function (value) {
                 this.body = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        ContextEvent.prototype.clone = function () {
+            }
+        );
+        p.clone = function () {
             return new fl.ContextEvent(this.type, this.body);
         };
         return ContextEvent;
     })(egret.Event);
     fl.ContextEvent = ContextEvent;
+    egret.registerClass(ContextEvent,"fl.ContextEvent");
 })(fl || (fl = {}));
 fl.ContextEvent.STARTUP = 'startup';
 fl.ContextEvent.STARTUP_COMPLETE = 'startupComplete';
 fl.ContextEvent.SHUTDOWN = 'shutdown';
 fl.ContextEvent.SHUTDOWN_COMPLETE = 'shutdownComplete';
+
 var fl;
 (function (fl) {
     var EventMap = (function (_super) {
@@ -817,17 +1059,16 @@ var fl;
             this.listeners = new Array();
             this.eventDispatcher = eventDispatcher;
         }
-        Object.defineProperty(EventMap.prototype, "dispatcherListeningEnabled", {
-            get: function () {
+        var d = __define,c=EventMap;p=c.prototype;
+        d(p, "dispatcherListeningEnabled"
+            ,function () {
                 return this._dispatcherListeningEnabled;
-            },
-            set: function (value) {
+            }
+            ,function (value) {
                 this._dispatcherListeningEnabled = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        EventMap.prototype.mapListener = function (dispatcher, type, listener, eventClass, useCapture, priority) {
+            }
+        );
+        p.mapListener = function (dispatcher, type, listener, eventClass, useCapture, priority) {
             if (eventClass === void 0) { eventClass = null; }
             if (useCapture === void 0) { useCapture = false; }
             if (priority === void 0) { priority = 0; }
@@ -851,7 +1092,7 @@ var fl;
             this.listeners.push(params);
             dispatcher.addEventListener(type, callback, null, useCapture, priority);
         };
-        EventMap.prototype.unmapListener = function (dispatcher, type, listener, eventClass, useCapture) {
+        p.unmapListener = function (dispatcher, type, listener, eventClass, useCapture) {
             if (eventClass === void 0) { eventClass = null; }
             if (useCapture === void 0) { useCapture = false; }
             eventClass = eventClass || egret.Event;
@@ -866,7 +1107,7 @@ var fl;
                 }
             }
         };
-        EventMap.prototype.unmapListeners = function () {
+        p.unmapListeners = function () {
             var params;
             var dispatcher;
             while (params = this.listeners.pop()) {
@@ -874,7 +1115,7 @@ var fl;
                 dispatcher.removeEventListener(params["type"], params["callback"], null, params["useCapture"]);
             }
         };
-        EventMap.prototype.routeEventToListener = function (event, listener, originalEventClass) {
+        p.routeEventToListener = function (event, listener, originalEventClass) {
             if (fl.is(event, originalEventClass)) {
                 listener(event);
             }
@@ -882,7 +1123,9 @@ var fl;
         return EventMap;
     })(egret.HashObject);
     fl.EventMap = EventMap;
+    egret.registerClass(EventMap,"fl.EventMap",["fl.IEventMap"]);
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var MediatorBase = (function (_super) {
@@ -891,7 +1134,8 @@ var fl;
             _super.call(this);
             this.removed = false;
         }
-        MediatorBase.prototype.preRegister = function () {
+        var d = __define,c=MediatorBase;p=c.prototype;
+        p.preRegister = function () {
             this.removed = false;
             if (fl.is(this.viewComponent, fl.MediatorBase.UIComponentClass) && !this.viewComponent["$UIComponent"][29 /* initialized */]) {
                 (this.viewComponent).addEventListener("creationComplete", this.onCreationComplete, this, false, 0);
@@ -900,21 +1144,21 @@ var fl;
                 this.onRegister();
             }
         };
-        MediatorBase.prototype.onRegister = function () {
+        p.onRegister = function () {
         };
-        MediatorBase.prototype.preRemove = function () {
+        p.preRemove = function () {
             this.removed = true;
             this.onRemove();
         };
-        MediatorBase.prototype.onRemove = function () {
+        p.onRemove = function () {
         };
-        MediatorBase.prototype.getViewComponent = function () {
+        p.getViewComponent = function () {
             return this.viewComponent;
         };
-        MediatorBase.prototype.setViewComponent = function (viewComponent) {
+        p.setViewComponent = function (viewComponent) {
             this.viewComponent = viewComponent;
         };
-        MediatorBase.prototype.onCreationComplete = function (e) {
+        p.onCreationComplete = function (e) {
             (e.target).removeEventListener('creationComplete', this.onCreationComplete, this, false);
             if (!this.removed)
                 this.onRegister();
@@ -922,8 +1166,10 @@ var fl;
         return MediatorBase;
     })(egret.HashObject);
     fl.MediatorBase = MediatorBase;
+    egret.registerClass(MediatorBase,"fl.MediatorBase",["fl.IMediator"]);
 })(fl || (fl = {}));
 fl.MediatorBase.UIComponentClass = 'eui.UIComponent';
+
 var fl;
 (function (fl) {
     var MediatorMap = (function (_super) {
@@ -937,7 +1183,8 @@ var fl;
             this.mappingConfigByViewClassName = new fl.Dictionary(false);
             this.mediatorsMarkedForRemoval = new fl.Dictionary(false);
         }
-        MediatorMap.prototype.mapView = function (viewClassOrName, mediatorClass, injectViewAs, autoCreate, autoRemove) {
+        var d = __define,c=MediatorMap;p=c.prototype;
+        p.mapView = function (viewClassOrName, mediatorClass, injectViewAs, autoCreate, autoRemove) {
             if (injectViewAs === void 0) { injectViewAs = null; }
             if (autoCreate === void 0) { autoCreate = true; }
             if (autoRemove === void 0) { autoRemove = true; }
@@ -970,7 +1217,7 @@ var fl;
             if (autoCreate && this.contextView && (viewClassName == fl.getClassName(this.contextView)))
                 this.createMediatorUsing(this.contextView, viewClassName, config);
         };
-        MediatorMap.prototype.unmapView = function (viewClassOrName) {
+        p.unmapView = function (viewClassOrName) {
             var viewClassName = this.reflector.getFQCN(viewClassOrName);
             var config = this.mappingConfigByViewClassName.getItem(viewClassName);
             if (config && (config.autoCreate || config.autoRemove)) {
@@ -980,10 +1227,10 @@ var fl;
             }
             this.mappingConfigByViewClassName.delItem(viewClassName);
         };
-        MediatorMap.prototype.createMediator = function (viewComponent) {
+        p.createMediator = function (viewComponent) {
             return this.createMediatorUsing(viewComponent);
         };
-        MediatorMap.prototype.registerMediator = function (viewComponent, mediator) {
+        p.registerMediator = function (viewComponent, mediator) {
             var mediatorClass = this.reflector.getClass(mediator);
             this.injector.hasMapping(mediatorClass) && this.injector.unmap(mediatorClass);
             this.injector.mapValue(mediatorClass, mediator);
@@ -992,7 +1239,7 @@ var fl;
             mediator.setViewComponent(viewComponent);
             mediator.preRegister();
         };
-        MediatorMap.prototype.removeMediator = function (mediator) {
+        p.removeMediator = function (mediator) {
             if (mediator) {
                 var viewComponent = mediator.getViewComponent();
                 var mediatorClass = this.reflector.getClass(mediator);
@@ -1004,20 +1251,20 @@ var fl;
             }
             return mediator;
         };
-        MediatorMap.prototype.removeMediatorByView = function (viewComponent) {
+        p.removeMediatorByView = function (viewComponent) {
             return this.removeMediator(this.retrieveMediator(viewComponent));
         };
-        MediatorMap.prototype.retrieveMediator = function (viewComponent) {
+        p.retrieveMediator = function (viewComponent) {
             return this.mediatorByView.getItem(viewComponent);
         };
-        MediatorMap.prototype.hasMapping = function (viewClassOrName) {
+        p.hasMapping = function (viewClassOrName) {
             var viewClassName = this.reflector.getFQCN(viewClassOrName);
             return (this.mappingConfigByViewClassName.getItem(viewClassName) != null);
         };
-        MediatorMap.prototype.hasMediatorForView = function (viewComponent) {
+        p.hasMediatorForView = function (viewComponent) {
             return this.mediatorByView.getItem(viewComponent) != null;
         };
-        MediatorMap.prototype.hasMediator = function (mediator) {
+        p.hasMediator = function (mediator) {
             for (var med_key_a in this.mediatorByView.map) {
                 var med = this.mediatorByView.map[med_key_a][1];
                 if (med == mediator)
@@ -1025,19 +1272,19 @@ var fl;
             }
             return false;
         };
-        MediatorMap.prototype.addListeners = function () {
+        p.addListeners = function () {
             if (this.contextView && this.enabled) {
                 this.contextView.addEventListener(egret.Event.ADDED_TO_STAGE, this.onViewAdded, this, this.useCapture, 0);
                 this.contextView.addEventListener(egret.Event.REMOVED_FROM_STAGE, this.onViewRemoved, this, this.useCapture, 0);
             }
         };
-        MediatorMap.prototype.removeListeners = function () {
+        p.removeListeners = function () {
             if (this.contextView) {
                 this.contextView.removeEventListener(egret.Event.ADDED_TO_STAGE, this.onViewAdded, this, this.useCapture);
                 this.contextView.removeEventListener(egret.Event.REMOVED_FROM_STAGE, this.onViewRemoved, this, this.useCapture);
             }
         };
-        MediatorMap.prototype.onViewAdded = function (e) {
+        p.onViewAdded = function (e) {
             if (this.mediatorsMarkedForRemoval.getItem(e.target)) {
                 this.mediatorsMarkedForRemoval.delItem(e.target);
                 return;
@@ -1047,7 +1294,7 @@ var fl;
             if (config && config.autoCreate)
                 this.createMediatorUsing(e.target, viewClassName, config);
         };
-        MediatorMap.prototype.createMediatorUsing = function (viewComponent, viewClassName, config) {
+        p.createMediatorUsing = function (viewComponent, viewClassName, config) {
             if (viewClassName === void 0) { viewClassName = ''; }
             if (config === void 0) { config = null; }
             var mediator = this.mediatorByView.getItem(viewComponent);
@@ -1069,7 +1316,7 @@ var fl;
             }
             return mediator;
         };
-        MediatorMap.prototype.onViewRemoved = function (e) {
+        p.onViewRemoved = function (e) {
             var config = this.mappingConfigByView.getItem(e.target);
             if (config && config.autoRemove) {
                 this.mediatorsMarkedForRemoval.setItem(e.target, e.target);
@@ -1079,7 +1326,7 @@ var fl;
                 }
             }
         };
-        MediatorMap.prototype.removeMediatorLater = function (value) {
+        p.removeMediatorLater = function (value) {
             this.hasMediatorsMarkedForRemoval = false;
             egret.stopTick(this.removeMediatorLater, this);
             for (var view_key_a in this.mediatorsMarkedForRemoval.map) {
@@ -1094,6 +1341,7 @@ var fl;
         return MediatorMap;
     })(fl.ViewMapBase);
     fl.MediatorMap = MediatorMap;
+    egret.registerClass(MediatorMap,"fl.MediatorMap",["fl.IMediatorMap"]);
     var MappingConfig = (function (_super) {
         __extends(MappingConfig, _super);
         function MappingConfig() {
@@ -1101,10 +1349,13 @@ var fl;
             this.autoCreate = false;
             this.autoRemove = false;
         }
+        var d = __define,c=MappingConfig;p=c.prototype;
         return MappingConfig;
     })(egret.HashObject);
     fl.MappingConfig = MappingConfig;
+    egret.registerClass(MappingConfig,"fl.MappingConfig");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var ViewMap = (function (_super) {
@@ -1115,7 +1366,8 @@ var fl;
             this.mappedTypes = new fl.Dictionary(false);
             this.injectedViews = new fl.Dictionary(true);
         }
-        ViewMap.prototype.mapPackage = function (packageName) {
+        var d = __define,c=ViewMap;p=c.prototype;
+        p.mapPackage = function (packageName) {
             if (this.mappedPackages.indexOf(packageName) == -1) {
                 this.mappedPackages.push(packageName);
                 this.viewListenerCount++;
@@ -1123,7 +1375,7 @@ var fl;
                     this.addListeners();
             }
         };
-        ViewMap.prototype.unmapPackage = function (packageName) {
+        p.unmapPackage = function (packageName) {
             var index = this.mappedPackages.indexOf(packageName);
             if (index > -1) {
                 this.mappedPackages.splice(index, 1);
@@ -1132,7 +1384,7 @@ var fl;
                     this.removeListeners();
             }
         };
-        ViewMap.prototype.mapType = function (type) {
+        p.mapType = function (type) {
             if (this.mappedTypes.getItem(type))
                 return;
             this.mappedTypes.setItem(type, type);
@@ -1142,7 +1394,7 @@ var fl;
             if (this.contextView && fl.is(this.contextView, type))
                 this.injectInto(this.contextView);
         };
-        ViewMap.prototype.unmapType = function (type) {
+        p.unmapType = function (type) {
             var mapping = this.mappedTypes.getItem(type);
             this.mappedTypes.delItem(type);
             if (mapping) {
@@ -1151,21 +1403,21 @@ var fl;
                     this.removeListeners();
             }
         };
-        ViewMap.prototype.hasType = function (type) {
+        p.hasType = function (type) {
             return (this.mappedTypes.getItem(type) != null);
         };
-        ViewMap.prototype.hasPackage = function (packageName) {
+        p.hasPackage = function (packageName) {
             return this.mappedPackages.indexOf(packageName) > -1;
         };
-        ViewMap.prototype.addListeners = function () {
+        p.addListeners = function () {
             if (this.contextView && this.enabled)
                 this.contextView.addEventListener(egret.Event.ADDED_TO_STAGE, this.onViewAdded, this, this.useCapture, 0);
         };
-        ViewMap.prototype.removeListeners = function () {
+        p.removeListeners = function () {
             if (this.contextView)
                 this.contextView.removeEventListener(egret.Event.ADDED_TO_STAGE, this.onViewAdded, this, this.useCapture);
         };
-        ViewMap.prototype.onViewAdded = function (e) {
+        p.onViewAdded = function (e) {
             var target = (e.target);
             if (this.injectedViews.getItem(target))
                 return;
@@ -1188,14 +1440,16 @@ var fl;
                 }
             }
         };
-        ViewMap.prototype.injectInto = function (target) {
+        p.injectInto = function (target) {
             this.injector.injectInto(target);
             this.injectedViews.setItem(target, true);
         };
         return ViewMap;
     })(fl.ViewMapBase);
     fl.ViewMap = ViewMap;
+    egret.registerClass(ViewMap,"fl.ViewMap",["fl.IViewMap"]);
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var ViewMapBase = (function (_super) {
@@ -1209,455 +1463,269 @@ var fl;
             this.useCapture = true;
             this.contextView = contextView;
         }
-        Object.defineProperty(ViewMapBase.prototype, "contextView", {
-            get: function () {
+        var d = __define,c=ViewMapBase;p=c.prototype;
+        d(p, "contextView"
+            ,function () {
                 return this._contextView;
-            },
-            set: function (value) {
+            }
+            ,function (value) {
                 if (value != this._contextView) {
                     this.removeListeners();
                     this._contextView = value;
                     if (this.viewListenerCount > 0)
                         this.addListeners();
                 }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(ViewMapBase.prototype, "enabled", {
-            get: function () {
+            }
+        );
+        d(p, "enabled"
+            ,function () {
                 return this._enabled;
-            },
-            set: function (value) {
+            }
+            ,function (value) {
                 if (value != this._enabled) {
                     this.removeListeners();
                     this._enabled = value;
                     if (this.viewListenerCount > 0)
                         this.addListeners();
                 }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        ViewMapBase.prototype.addListeners = function () {
+            }
+        );
+        p.addListeners = function () {
         };
-        ViewMapBase.prototype.removeListeners = function () {
+        p.removeListeners = function () {
         };
-        ViewMapBase.prototype.onViewAdded = function (e) {
+        p.onViewAdded = function (e) {
         };
         return ViewMapBase;
     })(egret.HashObject);
     fl.ViewMapBase = ViewMapBase;
+    egret.registerClass(ViewMapBase,"fl.ViewMapBase");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
-    var InjectionConfig = (function (_super) {
-        __extends(InjectionConfig, _super);
-        function InjectionConfig(request, injectionName) {
+    var Actor = (function (_super) {
+        __extends(Actor, _super);
+        function Actor() {
             _super.call(this);
-            this.request = request;
-            this.injectionName = injectionName;
         }
-        InjectionConfig.prototype.getResponse = function (injector) {
-            var ij = this.m_injector || injector;
-            if (this.m_result) {
-                return this.m_result.getResponse(ij);
+        var d = __define,c=Actor;p=c.prototype;
+        d(p, "eventDispatcher"
+            ,function () {
+                return this._eventDispatcher;
             }
-            var parentConfig = ij.getAncestorMapping(this.request, this.injectionName);
-            if (parentConfig) {
-                return parentConfig.getResponse(injector);
+            ,function (value) {
+                this._eventDispatcher = value;
             }
-            return null;
-        };
-        InjectionConfig.prototype.hasResponse = function (injector) {
-            if (this.m_result) {
-                return true;
+        );
+        d(p, "eventMap"
+            ,function () {
+                return this._eventMap || (this._eventMap = new fl.EventMap(this.eventDispatcher));
             }
-            var ij = this.m_injector || injector;
-            var parentConfig = ij.getAncestorMapping(this.request, this.injectionName);
-            return parentConfig != null;
-        };
-        InjectionConfig.prototype.hasOwnResponse = function () {
-            return this.m_result != null;
-        };
-        InjectionConfig.prototype.setResult = function (result) {
-            if (this.m_result != null && result != null) {
-                console.log('Warning: Injector already has a rule for type "' + fl.getClassName(this.request) + '", named "' + this.injectionName + '".\n ' + 'If you have overwritten this mapping intentionally you can use ' + '"injector.unmap()" prior to your replacement mapping in order to ' + 'avoid seeing this message.');
+            ,function (value) {
+                this._eventMap = value;
             }
-            this.m_result = result;
+        );
+        p.dispatch = function (event) {
+            if (this.eventDispatcher.hasEventListener(event.type))
+                return this.eventDispatcher.dispatchEvent(event);
+            return false;
         };
-        InjectionConfig.prototype.setInjector = function (injector) {
-            this.m_injector = injector;
-        };
-        return InjectionConfig;
+        return Actor;
     })(egret.HashObject);
-    fl.InjectionConfig = InjectionConfig;
+    fl.Actor = Actor;
+    egret.registerClass(Actor,"fl.Actor");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
-    var InjectionType = (function (_super) {
-        __extends(InjectionType, _super);
-        function InjectionType() {
-            _super.apply(this, arguments);
-        }
-        return InjectionType;
-    })(egret.HashObject);
-    fl.InjectionType = InjectionType;
-})(fl || (fl = {}));
-fl.InjectionType.VALUE = 0;
-fl.InjectionType.CLASS = 1;
-fl.InjectionType.SINGLETON = 2;
-var fl;
-(function (fl) {
-    var Injector = (function (_super) {
-        __extends(Injector, _super);
-        function Injector() {
+    var Command = (function (_super) {
+        __extends(Command, _super);
+        function Command() {
             _super.call(this);
-            this.m_mappings = new fl.Dictionary();
-            this.m_injecteeDescriptions = fl.Injector.INJECTION_POINTS_CACHE;
-            this.m_attendedToInjectees = new fl.Dictionary(true);
         }
-        Injector.prototype.mapValue = function (whenAskedFor, useValue, named) {
-            if (named === void 0) { named = ""; }
-            var config = this.getMapping(whenAskedFor, named);
-            config.setResult(new fl.InjectValueResult(useValue));
-            return config;
+        var d = __define,c=Command;p=c.prototype;
+        p.execute = function () {
         };
-        Injector.prototype.mapClass = function (whenAskedFor, instantiateClass, named) {
-            if (named === void 0) { named = ""; }
-            var config = this.getMapping(whenAskedFor, named);
-            config.setResult(new fl.InjectClassResult(instantiateClass));
-            return config;
+        p.dispatch = function (event) {
+            if (this.eventDispatcher.hasEventListener(event.type))
+                return this.eventDispatcher.dispatchEvent(event);
+            return false;
         };
-        Injector.prototype.mapSingleton = function (whenAskedFor, named) {
-            if (named === void 0) { named = ""; }
-            return this.mapSingletonOf(whenAskedFor, whenAskedFor, named);
-        };
-        Injector.prototype.mapSingletonOf = function (whenAskedFor, useSingletonOf, named) {
-            if (named === void 0) { named = ""; }
-            var config = this.getMapping(whenAskedFor, named);
-            config.setResult(new fl.InjectSingletonResult(useSingletonOf));
-            return config;
-        };
-        Injector.prototype.mapRule = function (whenAskedFor, useRule, named) {
-            if (named === void 0) { named = ""; }
-            var config = this.getMapping(whenAskedFor, named);
-            config.setResult(new fl.InjectOtherRuleResult(useRule));
-            return useRule;
-        };
-        Injector.prototype.getMapping = function (whenAskedFor, named) {
-            if (named === void 0) { named = ""; }
-            var requestName = fl.getClassName(whenAskedFor);
-            var config = this.m_mappings.getItem(requestName + '#' + named);
-            if (!config) {
-                config = this.m_mappings.setItem(requestName + '#' + named, new fl.InjectionConfig(whenAskedFor, named));
+        return Command;
+    })(egret.HashObject);
+    fl.Command = Command;
+    egret.registerClass(Command,"fl.Command");
+})(fl || (fl = {}));
+
+var fl;
+(function (fl) {
+    var Context = (function (_super) {
+        __extends(Context, _super);
+        function Context(contextView, autoStartup) {
+            if (contextView === void 0) { contextView = null; }
+            if (autoStartup === void 0) { autoStartup = true; }
+            _super.call(this);
+            this._autoStartup = false;
+            this._contextView = contextView;
+            this._autoStartup = autoStartup;
+            if (this._contextView) {
+                this.mapInjections();
+                this.checkAutoStartup();
             }
-            return config;
+        }
+        var d = __define,c=Context;p=c.prototype;
+        p.startup = function () {
+            this.dispatchEvent(new fl.ContextEvent(fl.ContextEvent.STARTUP_COMPLETE));
         };
-        Injector.prototype.injectInto = function (target) {
-            if (this.m_attendedToInjectees.getItem(target)) {
-                return;
+        p.shutdown = function () {
+            this.dispatchEvent(new fl.ContextEvent(fl.ContextEvent.SHUTDOWN_COMPLETE));
+        };
+        d(p, "contextView"
+            ,function () {
+                return this._contextView;
             }
-            this.m_attendedToInjectees.setItem(target, true);
-        };
-        Injector.prototype.instantiate = function (clazz) {
-            var injecteeDescription = this.m_injecteeDescriptions.getItem(clazz);
-            if (!injecteeDescription) {
-                injecteeDescription = this.getInjectionPoints(clazz);
+            ,function (value) {
+                if (value == this._contextView)
+                    return;
+                if (this._contextView)
+                    throw new fl.ContextError(fl.ContextError.E_CONTEXT_VIEW_OVR);
+                this._contextView = value;
+                this.mapInjections();
+                this.checkAutoStartup();
             }
-            var injectionPoint = injecteeDescription.ctor;
-            var instance = injectionPoint.applyInjection(clazz, this);
-            this.injectInto(instance);
-            return instance;
-        };
-        Injector.prototype.unmap = function (clazz, named) {
-            if (named === void 0) { named = ""; }
-            var mapping = this.getConfigurationForRequest(clazz, named);
-            if (!mapping) {
-                throw new fl.InjectorError('Error while removing an injector mapping: ' + 'No mapping defined for class ' + fl.getClassName(clazz) + ', named "' + named + '"');
+        );
+        d(p, "injector"
+            ,function () {
+                return this._injector = this._injector || this.createInjector();
             }
-            mapping.setResult(null);
-        };
-        Injector.prototype.hasMapping = function (clazz, named) {
-            if (named === void 0) { named = ''; }
-            var mapping = this.getConfigurationForRequest(clazz, named);
-            if (!mapping) {
-                return false;
+            ,function (value) {
+                this._injector = value;
             }
-            return mapping.hasResponse(this);
-        };
-        Injector.prototype.getInstance = function (clazz, named) {
-            if (named === void 0) { named = ''; }
-            var mapping = this.getConfigurationForRequest(clazz, named);
-            if (!mapping || !mapping.hasResponse(this)) {
-                throw new fl.InjectorError('Error while getting mapping response: ' + 'No mapping defined for class ' + fl.getClassName(clazz) + ', named "' + named + '"');
+        );
+        d(p, "reflector"
+            ,function () {
+                return this._reflector = this._reflector || new fl.Reflector();
             }
-            return mapping.getResponse(this);
+            ,function (value) {
+                this._reflector = value;
+            }
+        );
+        d(p, "commandMap"
+            ,function () {
+                return this._commandMap = this._commandMap || new fl.CommandMap(this.eventDispatcher, this.createChildInjector(), this.reflector);
+            }
+            ,function (value) {
+                this._commandMap = value;
+            }
+        );
+        d(p, "mediatorMap"
+            ,function () {
+                return this._mediatorMap = this._mediatorMap || new fl.MediatorMap(this.contextView, this.createChildInjector(), this.reflector);
+            }
+            ,function (value) {
+                this._mediatorMap = value;
+            }
+        );
+        d(p, "viewMap"
+            ,function () {
+                return this._viewMap = this._viewMap || new fl.ViewMap(this.contextView, this.injector);
+            }
+            ,function (value) {
+                this._viewMap = value;
+            }
+        );
+        p.mapInjections = function () {
+            this.injector.mapValue(fl.IReflector, this.reflector);
+            this.injector.mapValue(fl.IInjector, this.injector);
+            this.injector.mapValue("egret.IEventDispatcher", this.eventDispatcher);
+            this.injector.mapValue(egret.DisplayObjectContainer, this.contextView);
+            this.injector.mapValue(fl.ICommandMap, this.commandMap);
+            this.injector.mapValue(fl.IMediatorMap, this.mediatorMap);
+            this.injector.mapValue(fl.IViewMap, this.viewMap);
+            this.injector.mapClass(fl.IEventMap, fl.EventMap);
         };
-        Injector.prototype.createChildInjector = function () {
+        p.checkAutoStartup = function () {
+            if (this._autoStartup && this.contextView) {
+                this.contextView.stage ? this.startup() : this.contextView.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddedToStage, this, false, 0);
+            }
+        };
+        p.onAddedToStage = function (e) {
+            this.contextView.removeEventListener(egret.Event.ADDED_TO_STAGE, this.onAddedToStage, this);
+            this.startup();
+        };
+        p.createInjector = function () {
             var injector = new fl.Injector();
-            injector.setParentInjector(this);
             return injector;
         };
-        Injector.prototype.setParentInjector = function (parentInjector) {
-            if (this.m_parentInjector && !parentInjector) {
-                this.m_attendedToInjectees = new fl.Dictionary(true);
-            }
-            this.m_parentInjector = parentInjector;
-            if (parentInjector) {
-                this.m_attendedToInjectees = parentInjector.attendedToInjectees;
-            }
+        p.createChildInjector = function () {
+            return this.injector.createChildInjector();
         };
-        Injector.prototype.getParentInjector = function () {
-            return this.m_parentInjector;
-        };
-        Injector.purgeInjectionPointsCache = function () {
-            fl.Injector.INJECTION_POINTS_CACHE = new fl.Dictionary(true);
-        };
-        Injector.prototype.getAncestorMapping = function (whenAskedFor, named) {
-            if (named === void 0) { named = null; }
-            var parent = this.m_parentInjector;
-            while (parent) {
-                var parentConfig = parent.getConfigurationForRequest(whenAskedFor, named, false);
-                if (parentConfig && parentConfig.hasOwnResponse()) {
-                    return parentConfig;
-                }
-                parent = parent.getParentInjector();
-            }
-            return null;
-        };
-        Object.defineProperty(Injector.prototype, "attendedToInjectees", {
-            get: function () {
-                return this.m_attendedToInjectees;
-            },
-            set: function (value) {
-                this.m_attendedToInjectees = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Injector.prototype.getInjectionPoints = function (clazz) {
-            var injectionPoints = [];
-            var ctorInjectionPoint = new fl.NoParamsConstructorInjectionPoint();
-            var injecteeDescription = new InjecteeDescription(ctorInjectionPoint, injectionPoints);
-            this.m_injecteeDescriptions.setItem(clazz, injecteeDescription);
-            return injecteeDescription;
-        };
-        Injector.prototype.getConfigurationForRequest = function (clazz, named, traverseAncestors) {
-            if (traverseAncestors === void 0) { traverseAncestors = true; }
-            var requestName = fl.getClassName(clazz);
-            var config = this.m_mappings.getItem(requestName + '#' + named);
-            if (!config && traverseAncestors && this.m_parentInjector && this.m_parentInjector.hasMapping(clazz, named)) {
-                config = this.getAncestorMapping(clazz, named);
-            }
-            return config;
-        };
-        return Injector;
-    })(egret.HashObject);
-    fl.Injector = Injector;
-    var InjecteeDescription = (function (_super) {
-        __extends(InjecteeDescription, _super);
-        function InjecteeDescription(ctor, injectionPoints) {
-            _super.call(this);
-            this.ctor = ctor;
-            this.injectionPoints = injectionPoints;
-        }
-        return InjecteeDescription;
-    })(egret.HashObject);
+        return Context;
+    })(fl.ContextBase);
+    fl.Context = Context;
+    egret.registerClass(Context,"fl.Context",["fl.IContext"]);
 })(fl || (fl = {}));
-fl.Injector.INJECTION_POINTS_CACHE = new fl.Dictionary(true);
+
 var fl;
 (function (fl) {
-    var InjectorError = (function (_super) {
-        __extends(InjectorError, _super);
-        function InjectorError(message, id) {
-            if (message === void 0) { message = ""; }
-            if (id === void 0) { id = 0; }
-            _super.call(this, message);
-            this.name = id;
-        }
-        return InjectorError;
-    })(Error);
-    fl.InjectorError = InjectorError;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var Reflector = (function (_super) {
-        __extends(Reflector, _super);
-        function Reflector() {
+    var Mediator = (function (_super) {
+        __extends(Mediator, _super);
+        function Mediator() {
             _super.call(this);
         }
-        Reflector.prototype.classExtendsOrImplements = function (classOrClassName, superclass) {
-            var actualClass;
-            if (fl.isString(classOrClassName)) {
-                try {
-                    actualClass = egret.getDefinitionByName(classOrClassName);
-                }
-                catch (e) {
-                    throw new Error("The class name " + classOrClassName + " is not valid because of " + e + "\n" + e.getStackTrace());
-                }
+        var d = __define,c=Mediator;p=c.prototype;
+        p.preRemove = function () {
+            if (this._eventMap)
+                this._eventMap.unmapListeners();
+            _super.prototype.preRemove.call(this);
+        };
+        d(p, "eventDispatcher"
+            ,function () {
+                return this._eventDispatcher;
             }
-            else {
-                actualClass = classOrClassName;
+            ,function (value) {
+                this._eventDispatcher = value;
             }
-            if (!actualClass) {
-                throw new Error("The parameter classOrClassName must be a valid Class " + "instance or fully qualified class name.");
+        );
+        d(p, "eventMap"
+            ,function () {
+                return this._eventMap || (this._eventMap = new fl.EventMap(this.eventDispatcher));
             }
-            return fl.is(actualClass, superclass);
-        };
-        Reflector.prototype.getClass = function (value) {
-            if (fl.isClass(value)) {
-                return value;
+            ,function (value) {
+                this._eventMap = value;
             }
-            return value.constructor;
+        );
+        p.dispatch = function (event) {
+            if (this.eventDispatcher.hasEventListener(event.type))
+                return this.eventDispatcher.dispatchEvent(event);
+            return false;
         };
-        Reflector.prototype.getFQCN = function (value, replaceColons) {
-            if (replaceColons === void 0) { replaceColons = false; }
-            return fl.getClassName(value, replaceColons);
+        p.addViewListener = function (type, listener, eventClass, useCapture, priority) {
+            if (eventClass === void 0) { eventClass = null; }
+            if (useCapture === void 0) { useCapture = false; }
+            if (priority === void 0) { priority = 0; }
+            this.eventMap.mapListener(this.viewComponent, type, listener, eventClass, useCapture, priority);
         };
-        return Reflector;
-    })(egret.HashObject);
-    fl.Reflector = Reflector;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectionPoint = (function (_super) {
-        __extends(InjectionPoint, _super);
-        function InjectionPoint(injector) {
-            _super.call(this);
-        }
-        InjectionPoint.prototype.applyInjection = function (target, injector) {
-            return target;
+        p.removeViewListener = function (type, listener, eventClass, useCapture) {
+            if (eventClass === void 0) { eventClass = null; }
+            if (useCapture === void 0) { useCapture = false; }
+            this.eventMap.unmapListener(this.viewComponent, type, listener, eventClass, useCapture);
         };
-        return InjectionPoint;
-    })(egret.HashObject);
-    fl.InjectionPoint = InjectionPoint;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var NoParamsConstructorInjectionPoint = (function (_super) {
-        __extends(NoParamsConstructorInjectionPoint, _super);
-        function NoParamsConstructorInjectionPoint() {
-            _super.call(this, null);
-        }
-        NoParamsConstructorInjectionPoint.prototype.applyInjection = function (target, injector) {
-            return new target();
+        p.addContextListener = function (type, listener, eventClass, useCapture, priority) {
+            if (eventClass === void 0) { eventClass = null; }
+            if (useCapture === void 0) { useCapture = false; }
+            if (priority === void 0) { priority = 0; }
+            this.eventMap.mapListener(this.eventDispatcher, type, listener, eventClass, useCapture, priority);
         };
-        return NoParamsConstructorInjectionPoint;
-    })(fl.InjectionPoint);
-    fl.NoParamsConstructorInjectionPoint = NoParamsConstructorInjectionPoint;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectClassResult = (function (_super) {
-        __extends(InjectClassResult, _super);
-        function InjectClassResult(responseType) {
-            _super.call(this);
-            this.m_responseType = responseType;
-        }
-        InjectClassResult.prototype.getResponse = function (injector) {
-            return injector.instantiate(this.m_responseType);
+        p.removeContextListener = function (type, listener, eventClass, useCapture) {
+            if (eventClass === void 0) { eventClass = null; }
+            if (useCapture === void 0) { useCapture = false; }
+            this.eventMap["unmapListener"](this.eventDispatcher, type, listener, eventClass, useCapture);
         };
-        return InjectClassResult;
-    })(fl.InjectionResult);
-    fl.InjectClassResult = InjectClassResult;
+        return Mediator;
+    })(fl.MediatorBase);
+    fl.Mediator = Mediator;
+    egret.registerClass(Mediator,"fl.Mediator");
 })(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectOtherRuleResult = (function (_super) {
-        __extends(InjectOtherRuleResult, _super);
-        function InjectOtherRuleResult(rule) {
-            _super.call(this);
-            this.m_rule = rule;
-        }
-        InjectOtherRuleResult.prototype.getResponse = function (injector) {
-            return this.m_rule.getResponse(injector);
-        };
-        return InjectOtherRuleResult;
-    })(fl.InjectionResult);
-    fl.InjectOtherRuleResult = InjectOtherRuleResult;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectSingletonResult = (function (_super) {
-        __extends(InjectSingletonResult, _super);
-        function InjectSingletonResult(responseType) {
-            _super.call(this);
-            this.m_responseType = responseType;
-        }
-        InjectSingletonResult.prototype.getResponse = function (injector) {
-            return this.m_response = this.m_response || this.createResponse(injector);
-        };
-        InjectSingletonResult.prototype.createResponse = function (injector) {
-            return injector.instantiate(this.m_responseType);
-        };
-        return InjectSingletonResult;
-    })(fl.InjectionResult);
-    fl.InjectSingletonResult = InjectSingletonResult;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectValueResult = (function (_super) {
-        __extends(InjectValueResult, _super);
-        function InjectValueResult(value) {
-            _super.call(this);
-            this.m_value = value;
-        }
-        InjectValueResult.prototype.getResponse = function (injector) {
-            return this.m_value;
-        };
-        return InjectValueResult;
-    })(fl.InjectionResult);
-    fl.InjectValueResult = InjectValueResult;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var InjectionResult = (function (_super) {
-        __extends(InjectionResult, _super);
-        function InjectionResult() {
-            _super.call(this);
-        }
-        InjectionResult.prototype.getResponse = function (injector) {
-            return null;
-        };
-        return InjectionResult;
-    })(egret.HashObject);
-    fl.InjectionResult = InjectionResult;
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.ICommandMap = "fl.ICommandMap";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IContext = "fl.IContext";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IContextProvider = "fl.IContextProvider";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IEventMap = "fl.IEventMap";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IInjector = "fl.IInjector";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IMediator = "fl.IMediator";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IMediatorMap = "fl.IMediatorMap";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IReflector = "fl.IReflector";
-})(fl || (fl = {}));
-var fl;
-(function (fl) {
-    fl.IViewMap = "fl.IViewMap";
-})(fl || (fl = {}));
-//# sourceMappingURL=robotlegs_egret.js.map
+

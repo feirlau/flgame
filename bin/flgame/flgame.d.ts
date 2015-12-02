@@ -1,4 +1,13 @@
 declare module fl {
+}
+declare module fl {
+    class GlobalEvent extends egret.Event {
+        data: any;
+        constructor(type: string, data?: any, bubbles?: boolean, cancelable?: boolean);
+        clone(): egret.Event;
+    }
+}
+declare module fl {
     class EventManager extends egret.EventDispatcher {
         static instance_: fl.EventManager;
         static getInstance(): fl.EventManager;
@@ -12,10 +21,15 @@ declare module fl {
     var eventMgr: EventManager;
 }
 declare module fl {
-    class GlobalEvent extends egret.Event {
-        data: any;
-        constructor(type: string, data?: any, bubbles?: boolean, cancelable?: boolean);
-        clone(): egret.Event;
+    class BaseAction extends fl.Actor {
+        eventMgr: fl.EventManager;
+        netMgr: fl.NetManager;
+        protected mapProtocols: Array<any>;
+        protocols: Array<any>;
+        process(data: egret.ByteArray, protocol?: number): void;
+        sendPack(pack: fl.BasePack, netId?: string): void;
+        sendBytes(bytes: egret.ByteArray, netId?: string): void;
+        dispatchEvent(e: egret.Event): void;
     }
 }
 declare module fl {
@@ -43,18 +57,6 @@ declare module fl {
         static init(): void;
         static injectAction(actionClass: any): void;
         static uninjectAction(actionClass: any): void;
-    }
-}
-declare module fl {
-    class BaseAction extends fl.Actor {
-        eventMgr: fl.EventManager;
-        netMgr: fl.NetManager;
-        protected mapProtocols: Array<any>;
-        protocols: Array<any>;
-        process(data: egret.ByteArray, protocol?: number): void;
-        sendPack(pack: fl.BasePack, netId?: string): void;
-        sendBytes(bytes: egret.ByteArray, netId?: string): void;
-        dispatchEvent(e: egret.Event): void;
     }
 }
 declare module fl {

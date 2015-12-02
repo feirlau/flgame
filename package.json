@@ -1,11 +1,26 @@
 {
 	"name": "egret",
-	"version": "2.5.4",
+	"version": "2.5.6",
 	"modules": [
 		{
 			"name": "flgame",
 			"description": "fl game framework",
-			"files": [],
+			"files": [
+                "fl.ts",
+                "fl/event/GlobalEvent.ts",
+                "fl/event/EventManager.ts",
+                "fl/game/mvc/BaseAction.ts",
+                "fl/game/mvc/ActionManager.ts",
+                "fl/game/mvc/Actions.ts",
+                "fl/game/mvc/GameContext.ts",
+                "fl/game/mvc/GameMediator.ts",
+                "fl/game/mvc/Modules.ts",
+                "fl/game/net/BaseNet.ts",
+                "fl/game/net/BasePack.ts",
+                "fl/game/net/GameNet.ts",
+                "fl/game/net/NetManager.ts",
+                "fl/game/net/Protocol.ts"
+            ],
 			"root": "src"
 		}
 	]

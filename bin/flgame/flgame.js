@@ -1,8 +1,26 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+
+var fl;
+(function (fl) {
+    var GlobalEvent = (function (_super) {
+        __extends(GlobalEvent, _super);
+        function GlobalEvent(type, data, bubbles, cancelable) {
+            if (data === void 0) { data = null; }
+            if (bubbles === void 0) { bubbles = false; }
+            if (cancelable === void 0) { cancelable = false; }
+            _super.call(this, type, bubbles, cancelable);
+            this.data = data;
+        }
+        var d = __define,c=GlobalEvent;p=c.prototype;
+        p.clone = function () {
+            var tmpEvent = new fl.GlobalEvent(this.type, this.data, this.bubbles, this.cancelable);
+            return tmpEvent;
+        };
+        return GlobalEvent;
+    })(egret.Event);
+    fl.GlobalEvent = GlobalEvent;
+    egret.registerClass(GlobalEvent,"fl.GlobalEvent");
+})(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var EventManager = (function (_super) {
@@ -11,18 +29,19 @@ var fl;
             _super.apply(this, arguments);
             this.eventListeners_ = new fl.Dictionary();
         }
+        var d = __define,c=EventManager;p=c.prototype;
         EventManager.getInstance = function () {
             fl.EventManager.instance_ = fl.EventManager.instance_ || new fl.EventManager();
             return fl.EventManager.instance_;
         };
-        EventManager.prototype.dispatchEvent = function (event) {
+        p.dispatchEvent = function (event) {
             var _self__ = this;
             if (_self__.hasEventListener(event.type) || event.bubbles) {
                 return _super.prototype.dispatchEvent.call(this, event);
             }
             return true;
         };
-        EventManager.prototype.addEventListener = function (type, listener, thisObject, useCapture, priority) {
+        p.addEventListener = function (type, listener, thisObject, useCapture, priority) {
             if (useCapture === void 0) { useCapture = false; }
             if (priority === void 0) { priority = 0; }
             var tmpType = type + "_" + useCapture;
@@ -37,7 +56,7 @@ var fl;
                 listeners.push(listener);
             }
         };
-        EventManager.prototype.removeEventListener = function (type, listener, thisObject, useCapture) {
+        p.removeEventListener = function (type, listener, thisObject, useCapture) {
             if (useCapture === void 0) { useCapture = false; }
             var tmpType = type + "_" + useCapture;
             var listeners = this.eventListeners_.getItem(tmpType);
@@ -47,7 +66,7 @@ var fl;
                 listeners.splice(i, 1);
             }
         };
-        EventManager.prototype.removeListeners = function (type, useCapture) {
+        p.removeListeners = function (type, useCapture) {
             if (type === void 0) { type = null; }
             if (useCapture === void 0) { useCapture = false; }
             var tmpType;
@@ -69,34 +88,55 @@ var fl;
                 }
             }
         };
-        EventManager.prototype.removeAllListeners = function () {
+        p.removeAllListeners = function () {
             this.removeListeners(null, false);
             this.removeListeners(null, true);
         };
         return EventManager;
     })(egret.EventDispatcher);
     fl.EventManager = EventManager;
+    egret.registerClass(EventManager,"fl.EventManager");
     fl.eventMgr = fl.EventManager.getInstance();
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
-    var GlobalEvent = (function (_super) {
-        __extends(GlobalEvent, _super);
-        function GlobalEvent(type, data, bubbles, cancelable) {
-            if (data === void 0) { data = null; }
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            _super.call(this, type, bubbles, cancelable);
-            this.data = data;
+    var BaseAction = (function (_super) {
+        __extends(BaseAction, _super);
+        function BaseAction() {
+            _super.apply(this, arguments);
+            this.eventMgr = fl.eventMgr;
+            this.netMgr = fl.netMgr;
         }
-        GlobalEvent.prototype.clone = function () {
-            var tmpEvent = new fl.GlobalEvent(this.type, this.data, this.bubbles, this.cancelable);
-            return tmpEvent;
+        var d = __define,c=BaseAction;p=c.prototype;
+        d(p, "protocols"
+            ,function () {
+                return this.mapProtocols;
+            }
+            ,function (value) {
+                this.mapProtocols = value;
+            }
+        );
+        p.process = function (data, protocol) {
+            if (protocol === void 0) { protocol = 0; }
         };
-        return GlobalEvent;
-    })(egret.Event);
-    fl.GlobalEvent = GlobalEvent;
+        p.sendPack = function (pack, netId) {
+            if (netId === void 0) { netId = ""; }
+            this.netMgr.sendPack(pack, netId);
+        };
+        p.sendBytes = function (bytes, netId) {
+            if (netId === void 0) { netId = ""; }
+            this.netMgr.sendBytes(bytes, netId);
+        };
+        p.dispatchEvent = function (e) {
+            this.eventMgr.dispatchEvent(e);
+        };
+        return BaseAction;
+    })(fl.Actor);
+    fl.BaseAction = BaseAction;
+    egret.registerClass(BaseAction,"fl.BaseAction");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var ActionManager = (function (_super) {
@@ -106,17 +146,18 @@ var fl;
             this.actionCache_ = new fl.Dictionary();
             this.actionClazz_ = [];
         }
+        var d = __define,c=ActionManager;p=c.prototype;
         ActionManager.getInstance = function () {
             if (null == fl.ActionManager.instance_) {
                 fl.ActionManager.instance_ = new fl.ActionManager();
             }
             return fl.ActionManager.instance_;
         };
-        ActionManager.prototype.initActions = function (injector) {
+        p.initActions = function (injector) {
             this.injector_ = injector;
             this.injector_.mapValue(fl.ActionManager, this);
         };
-        ActionManager.prototype.injectAction = function (actionClass) {
+        p.injectAction = function (actionClass) {
             var tmpI = this.actionClazz_.indexOf(actionClass);
             if (this.injector_ && actionClass && tmpI == -1) {
                 this.injector_.mapSingleton(actionClass);
@@ -125,7 +166,7 @@ var fl;
                 this.actionClazz_.push(actionClass);
             }
         };
-        ActionManager.prototype.uninjectAction = function (actionClass) {
+        p.uninjectAction = function (actionClass) {
             var tmpI = this.actionClazz_.indexOf(actionClass);
             if (this.injector_ && actionClass && tmpI >= 0) {
                 var action = this.injector_.getInstance(actionClass);
@@ -134,7 +175,7 @@ var fl;
                 this.actionClazz_.splice(tmpI, 1);
             }
         };
-        ActionManager.prototype.mapAction = function (action) {
+        p.mapAction = function (action) {
             if (action) {
                 for (var protocol_key_a in action.protocols) {
                     var protocol = action.protocols[protocol_key_a];
@@ -143,7 +184,7 @@ var fl;
                 }
             }
         };
-        ActionManager.prototype.unmapAction = function (action) {
+        p.unmapAction = function (action) {
             for (var forinvar__ in this.actionCache_.map) {
                 var key = this.actionCache_.map[forinvar__][0];
                 if (this.actionCache_.getItem(key) == action) {
@@ -151,7 +192,7 @@ var fl;
                 }
             }
         };
-        ActionManager.prototype.getActionByClass = function (actionClass) {
+        p.getActionByClass = function (actionClass) {
             var action;
             var tmpI = this.actionClazz_.indexOf(actionClass);
             if (this.injector_ && actionClass && tmpI != -1) {
@@ -159,18 +200,18 @@ var fl;
             }
             return action;
         };
-        ActionManager.prototype.getAction = function (id) {
+        p.getAction = function (id) {
             var action = this.actionCache_.getItem(id);
             return action;
         };
-        ActionManager.prototype.setAction = function (action, id) {
+        p.setAction = function (action, id) {
             if (this.actionCache_.getItem(id)) {
                 this.removeAction(id);
             }
             this.actionCache_.setItem(id, action);
             return action;
         };
-        ActionManager.prototype.removeAction = function (id) {
+        p.removeAction = function (id) {
             var action = null;
             if (this.actionCache_.hasOwnProperty(id)) {
                 action = this.actionCache_.getItem(id);
@@ -181,8 +222,10 @@ var fl;
         return ActionManager;
     })(egret.HashObject);
     fl.ActionManager = ActionManager;
+    egret.registerClass(ActionManager,"fl.ActionManager");
     fl.actionMgr = fl.ActionManager.getInstance();
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var Actions = (function (_super) {
@@ -190,6 +233,7 @@ var fl;
         function Actions() {
             _super.apply(this, arguments);
         }
+        var d = __define,c=Actions;p=c.prototype;
         Actions.init = function () {
             if (fl.Actions.inited)
                 return;
@@ -206,44 +250,9 @@ var fl;
         return Actions;
     })(egret.HashObject);
     fl.Actions = Actions;
+    egret.registerClass(Actions,"fl.Actions");
 })(fl || (fl = {}));
-var fl;
-(function (fl) {
-    var BaseAction = (function (_super) {
-        __extends(BaseAction, _super);
-        function BaseAction() {
-            _super.apply(this, arguments);
-            this.eventMgr = fl.eventMgr;
-            this.netMgr = fl.netMgr;
-        }
-        Object.defineProperty(BaseAction.prototype, "protocols", {
-            get: function () {
-                return this.mapProtocols;
-            },
-            set: function (value) {
-                this.mapProtocols = value;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BaseAction.prototype.process = function (data, protocol) {
-            if (protocol === void 0) { protocol = 0; }
-        };
-        BaseAction.prototype.sendPack = function (pack, netId) {
-            if (netId === void 0) { netId = ""; }
-            this.netMgr.sendPack(pack, netId);
-        };
-        BaseAction.prototype.sendBytes = function (bytes, netId) {
-            if (netId === void 0) { netId = ""; }
-            this.netMgr.sendBytes(bytes, netId);
-        };
-        BaseAction.prototype.dispatchEvent = function (e) {
-            this.eventMgr.dispatchEvent(e);
-        };
-        return BaseAction;
-    })(fl.Actor);
-    fl.BaseAction = BaseAction;
-})(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var GameContext = (function (_super) {
@@ -252,6 +261,7 @@ var fl;
             if (contextView === void 0) { contextView = null; }
             _super.call(this, contextView, false);
         }
+        var d = __define,c=GameContext;p=c.prototype;
         GameContext.getInstance = function (contextView) {
             if (contextView === void 0) { contextView = null; }
             contextView = contextView;
@@ -262,15 +272,15 @@ var fl;
             }
             return tmpIns;
         };
-        GameContext.prototype.createEventDispatcher = function () {
+        p.createEventDispatcher = function () {
             return fl.eventMgr;
         };
-        GameContext.prototype.startup = function () {
+        p.startup = function () {
             this.injector.mapValue(fl.EventManager, fl.eventMgr);
             fl.actionMgr.initActions(this.injector);
             _super.prototype.startup.call(this);
         };
-        GameContext.prototype.mapView = function (viewClassOrName, mediatorClass, viewIns, injectViewAs, autoCreate, autoRemove) {
+        p.mapView = function (viewClassOrName, mediatorClass, viewIns, injectViewAs, autoCreate, autoRemove) {
             if (viewIns === void 0) { viewIns = null; }
             if (injectViewAs === void 0) { injectViewAs = null; }
             if (autoCreate === void 0) { autoCreate = true; }
@@ -278,20 +288,22 @@ var fl;
             this.mediatorMap.mapView(viewClassOrName, mediatorClass, injectViewAs, autoCreate, autoRemove);
             viewIns && viewIns["stage"] && this.mediatorMap.createMediator(viewIns);
         };
-        GameContext.prototype.unmapView = function (viewClassOrName) {
+        p.unmapView = function (viewClassOrName) {
             this.mediatorMap.unmapView(viewClassOrName);
         };
-        GameContext.prototype.injectAction = function (actionClass) {
+        p.injectAction = function (actionClass) {
             fl.actionMgr.injectAction(actionClass);
         };
-        GameContext.prototype.uninjectAction = function (actionClass) {
+        p.uninjectAction = function (actionClass) {
             fl.actionMgr.uninjectAction(actionClass);
         };
         GameContext.instances_ = new fl.Dictionary();
         return GameContext;
     })(fl.Context);
     fl.GameContext = GameContext;
+    egret.registerClass(GameContext,"fl.GameContext");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var GameMediator = (function (_super) {
@@ -301,19 +313,20 @@ var fl;
             this.viewList_ = new Array();
             this.actionList_ = new Array();
         }
-        GameMediator.prototype.onRemove = function () {
+        var d = __define,c=GameMediator;p=c.prototype;
+        p.onRemove = function () {
             this.unmapActions();
             this.unmapMediators();
             _super.prototype.onRemove.call(this);
         };
-        GameMediator.prototype.unmapMediators = function () {
+        p.unmapMediators = function () {
             for (var tmpView_key_a in this.viewList_) {
                 var tmpView = this.viewList_[tmpView_key_a];
                 this.mediatorMap.unmapView(tmpView);
             }
             this.viewList_.splice(0, this.viewList_.length);
         };
-        GameMediator.prototype.mapMediator = function (viewClazzOrName, mediaClazz, viewIns, injectViewAs, autoCreate, autoRemove) {
+        p.mapMediator = function (viewClazzOrName, mediaClazz, viewIns, injectViewAs, autoCreate, autoRemove) {
             if (viewIns === void 0) { viewIns = null; }
             if (injectViewAs === void 0) { injectViewAs = null; }
             if (autoCreate === void 0) { autoCreate = true; }
@@ -328,7 +341,7 @@ var fl;
                 this.viewList_.push(viewClazzOrName);
             }
         };
-        GameMediator.prototype.unmapMediator = function (viewClazzOrName) {
+        p.unmapMediator = function (viewClazzOrName) {
             var i = this.viewList_.indexOf(viewClazzOrName);
             if (i != -1) {
                 this.mediatorMap.unmapView(viewClazzOrName);
@@ -338,14 +351,14 @@ var fl;
                 console.log("[unmapMediator] Mediator Class has not been mapped to a View Class in this context - " + viewClazzOrName);
             }
         };
-        GameMediator.prototype.unmapActions = function () {
+        p.unmapActions = function () {
             for (var tmpAction_key_a in this.actionList_) {
                 var tmpAction = this.actionList_[tmpAction_key_a];
                 this.actionManager.uninjectAction(tmpAction);
             }
             this.actionList_.splice(0, this.actionList_.length);
         };
-        GameMediator.prototype.injectAction = function (actionClass) {
+        p.injectAction = function (actionClass) {
             var i = this.actionList_.indexOf(actionClass);
             if (i != -1) {
                 console.log("[injectAction] Action Class has already been injected in this context - " + actionClass);
@@ -355,7 +368,7 @@ var fl;
                 this.actionList_.push(actionClass);
             }
         };
-        GameMediator.prototype.uninjectAction = function (actionClass) {
+        p.uninjectAction = function (actionClass) {
             var i = this.actionList_.indexOf(actionClass);
             if (i != -1) {
                 this.actionManager.uninjectAction(actionClass);
@@ -368,7 +381,9 @@ var fl;
         return GameMediator;
     })(fl.Mediator);
     fl.GameMediator = GameMediator;
+    egret.registerClass(GameMediator,"fl.GameMediator");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var Modules = (function (_super) {
@@ -376,6 +391,7 @@ var fl;
         function Modules() {
             _super.apply(this, arguments);
         }
+        var d = __define,c=Modules;p=c.prototype;
         Modules.init = function (startupFuns) {
             if (startupFuns === void 0) { startupFuns = null; }
             if (fl.Modules.inited)
@@ -401,7 +417,9 @@ var fl;
         return Modules;
     })(egret.HashObject);
     fl.Modules = Modules;
+    egret.registerClass(Modules,"fl.Modules");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var BaseNet = (function (_super) {
@@ -422,40 +440,41 @@ var fl;
             this._receBytes = new egret.ByteArray();
             this.open();
         }
-        BaseNet.prototype.open = function () {
+        var d = __define,c=BaseNet;p=c.prototype;
+        p.open = function () {
             if (!this.socket.connected) {
                 this.socket.connect(this.ip, this.port);
             }
         };
-        BaseNet.prototype.close = function () {
+        p.close = function () {
             if (this.socket.connected) {
                 this.socket.close();
             }
             this.dataCache_ = new Array();
         };
-        BaseNet.prototype.forceClose = function () {
+        p.forceClose = function () {
             this.close();
             fl.eventMgr.dispatchEvent(new fl.GlobalEvent(fl.BaseNet.EVENT_CLIENT_CLOSE));
         };
-        BaseNet.prototype.onConnect = function (e) {
+        p.onConnect = function (e) {
             var data = this.dataCache_.shift();
             while (data) {
                 this.send(data);
                 data = this.dataCache_.shift();
             }
         };
-        BaseNet.prototype.notifyClose = function () {
+        p.notifyClose = function () {
             fl.eventMgr.dispatchEvent(new fl.GlobalEvent(fl.BaseNet.EVENT_NET_ERR, this.id));
         };
-        BaseNet.prototype.onClose = function (e) {
+        p.onClose = function (e) {
             egret.log("[BaseNet.onClose] " + e);
             this.notifyClose();
         };
-        BaseNet.prototype.onError = function (e) {
+        p.onError = function (e) {
             egret.error("[BaseNet.onError] " + e);
             this.notifyClose();
         };
-        BaseNet.prototype.send = function (bytes) {
+        p.send = function (bytes) {
             if (this.socket.connected) {
                 this.socket.writeBytes(bytes, 0, bytes.length);
                 this.socket.flush();
@@ -464,7 +483,7 @@ var fl;
                 this.dataCache_.push(bytes);
             }
         };
-        BaseNet.prototype.onReceived = function (e) {
+        p.onReceived = function (e) {
             var tempBytes = new egret.ByteArray();
             this.socket.readBytes(tempBytes);
             if (tempBytes.length == 0) {
@@ -475,7 +494,7 @@ var fl;
             while (this.processPacks())
                 ;
         };
-        BaseNet.prototype.processPacks = function () {
+        p.processPacks = function () {
             var _self__ = this;
             if (this._receBytes.length < fl.BasePack.HEAD_SIZE) {
                 return false;
@@ -487,7 +506,7 @@ var fl;
                 return false;
             }
             if (firstPackageLenght > 2 * fl.BasePack.MAX_PACK_SIZE) {
-                throw new Error("[BaseSocket.processPacks] unknow package size: " + firstPackageLenght);
+                throw new fl.Error("[BaseSocket.processPacks] unknow package size: " + firstPackageLenght);
             }
             var tmpBytes = new egret.ByteArray();
             tmpBytes.writeBytes(this._receBytes, 0, fl.BasePack.HEAD_SIZE);
@@ -527,10 +546,10 @@ var fl;
         /**
          * decrypt the data if need
          **/
-        BaseNet.prototype.decryption = function (bytes) {
+        p.decryption = function (bytes) {
             return bytes;
         };
-        BaseNet.prototype.cachCmd = function (b) {
+        p.cachCmd = function (b) {
             this._cachCmd = b;
             if (b) {
                 if (null == this._cachQueue)
@@ -545,16 +564,16 @@ var fl;
                 }
             }
         };
-        BaseNet.prototype.noCachCmd = function (p) {
+        p.noCachCmd = function (p) {
             return false;
         };
-        BaseNet.prototype.processOrCache = function (protocol, data) {
+        p.processOrCache = function (protocol, data) {
             if (false == this._cachCmd || this.noCachCmd(protocol))
                 this.processCmd(protocol, data);
             else
                 this._cachQueue.push({ protocol: protocol, data: data });
         };
-        BaseNet.prototype.processCmd = function (protocol, data) {
+        p.processCmd = function (protocol, data) {
             var tick = egret.getTimer();
             var action = fl.actionMgr.getAction(protocol);
             if (action) {
@@ -579,7 +598,9 @@ var fl;
         return BaseNet;
     })(egret.HashObject);
     fl.BaseNet = BaseNet;
+    egret.registerClass(BaseNet,"fl.BaseNet");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var BasePack = (function (_super) {
@@ -591,7 +612,8 @@ var fl;
             this.result = 0;
             this.id = id;
         }
-        BasePack.prototype.getBytes = function () {
+        var d = __define,c=BasePack;p=c.prototype;
+        p.getBytes = function () {
             var bytes = new egret.ByteArray();
             bytes.position = 2;
             bytes.writeUnsignedInt(this.id);
@@ -601,25 +623,25 @@ var fl;
             bytes.writeUnsignedShort(this.size);
             return bytes;
         };
-        BasePack.prototype.toBytes = function (bytes) {
+        p.toBytes = function (bytes) {
         };
-        BasePack.prototype.writeBytes = function (bytes) {
+        p.writeBytes = function (bytes) {
             this.toBytes(bytes);
         };
-        BasePack.prototype.setBytes = function (bytes) {
+        p.setBytes = function (bytes) {
             bytes.position = fl.BasePack.HEAD_SIZE;
             this.fromBytes(bytes);
             this.dealError(this.result);
         };
-        BasePack.prototype.fromBytes = function (bytes) {
+        p.fromBytes = function (bytes) {
         };
-        BasePack.prototype.readBytes = function (bytes) {
+        p.readBytes = function (bytes) {
             this.fromBytes(bytes);
         };
-        BasePack.prototype.resetBytesPos = function (bytes) {
+        p.resetBytesPos = function (bytes) {
             bytes.position = fl.BasePack.HEAD_SIZE;
         };
-        BasePack.prototype.dealError = function (err) {
+        p.dealError = function (err) {
             if (err != 0) {
                 fl.eventMgr.dispatchEvent(new fl.GlobalEvent(fl.BasePack.EVENT_PACK_ERR, err));
                 egret.error("[BasePack.dealError] " + this.id + ":" + err);
@@ -631,7 +653,9 @@ var fl;
         return BasePack;
     })(egret.HashObject);
     fl.BasePack = BasePack;
+    egret.registerClass(BasePack,"fl.BasePack");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var GameNet = (function (_super) {
@@ -640,13 +664,16 @@ var fl;
             _super.call(this, ip, port, id);
             this.cachCmd(true);
         }
-        GameNet.prototype.noCachCmd = function (p) {
+        var d = __define,c=GameNet;p=c.prototype;
+        p.noCachCmd = function (p) {
             return false;
         };
         return GameNet;
     })(fl.BaseNet);
     fl.GameNet = GameNet;
+    egret.registerClass(GameNet,"fl.GameNet");
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var NetManager = (function (_super) {
@@ -655,13 +682,14 @@ var fl;
             _super.apply(this, arguments);
             this.netCache_ = new fl.Dictionary();
         }
+        var d = __define,c=NetManager;p=c.prototype;
         NetManager.getInstance = function () {
             if (null == fl.NetManager.instance_) {
                 fl.NetManager.instance_ = new fl.NetManager();
             }
             return fl.NetManager.instance_;
         };
-        NetManager.prototype.addNet = function (ip, port, id, netClass) {
+        p.addNet = function (ip, port, id, netClass) {
             if (id === void 0) { id = fl.NetManager.NET_GAME; }
             if (netClass === void 0) { netClass = null; }
             var net = this.netCache_.getItem(id);
@@ -672,13 +700,13 @@ var fl;
             }
             return net;
         };
-        NetManager.prototype.getNet = function (id) {
+        p.getNet = function (id) {
             if (id === void 0) { id = fl.NetManager.NET_GAME; }
             id = id || fl.NetManager.NET_GAME;
             var net = this.netCache_.getItem(id);
             return net;
         };
-        NetManager.prototype.setNet = function (net, id) {
+        p.setNet = function (net, id) {
             if (id === void 0) { id = fl.NetManager.NET_GAME; }
             if (this.netCache_.getItem(id)) {
                 this.removeNet(id);
@@ -686,7 +714,7 @@ var fl;
             this.netCache_.setItem(id, net);
             return net;
         };
-        NetManager.prototype.removeNet = function (id) {
+        p.removeNet = function (id) {
             if (id === void 0) { id = fl.NetManager.NET_GAME; }
             var net = null;
             if (this.netCache_.hasOwnProperty(id)) {
@@ -696,31 +724,31 @@ var fl;
             }
             return net;
         };
-        NetManager.prototype.sendPack = function (pack, netId) {
+        p.sendPack = function (pack, netId) {
             if (netId === void 0) { netId = fl.NetManager.NET_GAME; }
             this.sendBytes(pack.getBytes(), netId);
         };
-        NetManager.prototype.sendBytes = function (bytes, netId) {
+        p.sendBytes = function (bytes, netId) {
             if (netId === void 0) { netId = fl.NetManager.NET_GAME; }
             var net = this.getNet(netId);
             net.send(bytes);
         };
-        Object.defineProperty(NetManager.prototype, "isLocalNet", {
-            get: function () {
+        d(p, "isLocalNet"
+            ,function () {
                 var net = this.getNet();
                 return net && net.ip.substr(0, 8) == "192.168.";
-            },
-            set: function (value) {
-            },
-            enumerable: true,
-            configurable: true
-        });
+            }
+            ,function (value) {
+            }
+        );
         NetManager.NET_GAME = "GameNet";
         return NetManager;
     })(egret.HashObject);
     fl.NetManager = NetManager;
+    egret.registerClass(NetManager,"fl.NetManager");
     fl.netMgr = fl.NetManager.getInstance();
 })(fl || (fl = {}));
+
 var fl;
 (function (fl) {
     var Protocol = (function (_super) {
@@ -728,6 +756,7 @@ var fl;
         function Protocol() {
             _super.call(this);
         }
+        var d = __define,c=Protocol;p=c.prototype;
         Protocol.getProtocolType = function (p) {
             p = p / fl.Protocol.CMD_TYPE_BASE;
             return Math.floor(p);
@@ -740,5 +769,6 @@ var fl;
         return Protocol;
     })(egret.HashObject);
     fl.Protocol = Protocol;
+    egret.registerClass(Protocol,"fl.Protocol");
 })(fl || (fl = {}));
-//# sourceMappingURL=flgame.js.map
+
