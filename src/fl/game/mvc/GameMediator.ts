@@ -1,8 +1,11 @@
 module fl {
 	export class GameMediator extends fl.Mediator {
-
-		public eventManager:fl.EventManager;
-		public actionManager:fl.ActionManager;
+		public mediatorMap:fl.IMediatorMap;
+		protected updateContext():void {
+			super.updateContext();
+			
+			this.mediatorMap = this.context.mediatorMap;
+		}
 		public onRemove()
 		{
 			this.unmapActions();
@@ -56,7 +59,7 @@ module fl {
 			for(var tmpAction_key_a in this.actionList_)
 			{
 				var tmpAction:any = this.actionList_[tmpAction_key_a];
-				this.actionManager.uninjectAction(tmpAction);
+				fl.actionMgr.uninjectAction(tmpAction);
 			}
 			this.actionList_.splice(0,this.actionList_.length);
 		}
@@ -70,7 +73,7 @@ module fl {
 			}
 			else
 			{
-				this.actionManager.injectAction(actionClass);
+				fl.actionMgr.injectAction(actionClass);
 				this.actionList_.push(actionClass);
 			}
 		}
@@ -80,7 +83,7 @@ module fl {
 			var i:number = this.actionList_.indexOf(actionClass);
 			if(i != -1)
 			{
-				this.actionManager.uninjectAction(actionClass);
+				fl.actionMgr.uninjectAction(actionClass);
 				this.actionList_.splice(i,1);
 			}
 			else

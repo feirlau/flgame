@@ -105,8 +105,6 @@ var fl;
         __extends(BaseAction, _super);
         function BaseAction() {
             _super.apply(this, arguments);
-            this.eventMgr = fl.eventMgr;
-            this.netMgr = fl.netMgr;
         }
         var d = __define,c=BaseAction;p=c.prototype;
         d(p, "protocols"
@@ -117,19 +115,24 @@ var fl;
                 this.mapProtocols = value;
             }
         );
+        d(p, "eventDispatcher"
+            ,function () {
+                return fl.eventMgr;
+            }
+        );
         p.process = function (data, protocol) {
             if (protocol === void 0) { protocol = 0; }
         };
         p.sendPack = function (pack, netId) {
             if (netId === void 0) { netId = ""; }
-            this.netMgr.sendPack(pack, netId);
+            fl.netMgr.sendPack(pack, netId);
         };
         p.sendBytes = function (bytes, netId) {
             if (netId === void 0) { netId = ""; }
-            this.netMgr.sendBytes(bytes, netId);
+            fl.netMgr.sendBytes(bytes, netId);
         };
         p.dispatchEvent = function (e) {
-            this.eventMgr.dispatchEvent(e);
+            this.eventDispatcher.dispatchEvent(e);
         };
         return BaseAction;
     })(fl.Actor);
@@ -314,6 +317,10 @@ var fl;
             this.actionList_ = new Array();
         }
         var d = __define,c=GameMediator;p=c.prototype;
+        p.updateContext = function () {
+            _super.prototype.updateContext.call(this);
+            this.mediatorMap = this.context.mediatorMap;
+        };
         p.onRemove = function () {
             this.unmapActions();
             this.unmapMediators();
@@ -354,7 +361,7 @@ var fl;
         p.unmapActions = function () {
             for (var tmpAction_key_a in this.actionList_) {
                 var tmpAction = this.actionList_[tmpAction_key_a];
-                this.actionManager.uninjectAction(tmpAction);
+                fl.actionMgr.uninjectAction(tmpAction);
             }
             this.actionList_.splice(0, this.actionList_.length);
         };
@@ -364,14 +371,14 @@ var fl;
                 console.log("[injectAction] Action Class has already been injected in this context - " + actionClass);
             }
             else {
-                this.actionManager.injectAction(actionClass);
+                fl.actionMgr.injectAction(actionClass);
                 this.actionList_.push(actionClass);
             }
         };
         p.uninjectAction = function (actionClass) {
             var i = this.actionList_.indexOf(actionClass);
             if (i != -1) {
-                this.actionManager.uninjectAction(actionClass);
+                fl.actionMgr.uninjectAction(actionClass);
                 this.actionList_.splice(i, 1);
             }
             else {

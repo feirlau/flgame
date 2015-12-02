@@ -22,10 +22,9 @@ declare module fl {
 }
 declare module fl {
     class BaseAction extends fl.Actor {
-        eventMgr: fl.EventManager;
-        netMgr: fl.NetManager;
         protected mapProtocols: Array<any>;
         protocols: Array<any>;
+        eventDispatcher: egret.IEventDispatcher;
         process(data: egret.ByteArray, protocol?: number): void;
         sendPack(pack: fl.BasePack, netId?: string): void;
         sendBytes(bytes: egret.ByteArray, netId?: string): void;
@@ -74,8 +73,8 @@ declare module fl {
 }
 declare module fl {
     class GameMediator extends fl.Mediator {
-        eventManager: fl.EventManager;
-        actionManager: fl.ActionManager;
+        mediatorMap: fl.IMediatorMap;
+        protected updateContext(): void;
         onRemove(): void;
         private viewList_;
         protected unmapMediators(): void;
