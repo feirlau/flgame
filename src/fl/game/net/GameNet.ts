@@ -1,3 +1,5 @@
+/// <reference path="BaseNet" />
+
 module fl {
 	export class GameNet extends fl.BaseNet {
 

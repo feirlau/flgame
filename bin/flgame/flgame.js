@@ -663,6 +663,7 @@ var fl;
     egret.registerClass(BasePack,"fl.BasePack");
 })(fl || (fl = {}));
 
+/// <reference path="BaseNet" />
 var fl;
 (function (fl) {
     var GameNet = (function (_super) {
