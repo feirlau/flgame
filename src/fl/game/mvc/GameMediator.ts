@@ -26,30 +26,32 @@ module fl {
 
 		protected mapMediator(viewClazzOrName:any,mediaClazz:any,viewIns:any = null,injectViewAs:any = null,autoCreate:boolean = true,autoRemove:boolean = true)
 		{
-			var i:number = this.viewList_.indexOf(viewClazzOrName);
+			var viewName:string = fl.getClassName(viewClazzOrName);
+			var i:number = this.viewList_.indexOf(viewName);
 			if(i != -1)
 			{
-				console.log("[mapMediator] Mediator Class has already been mapped to a View Class in this context - " + viewClazzOrName);
+				console.log("[mapMediator] Mediator Class has already been mapped to a View Class in this context - " + viewName);
 			}
 			else
 			{
-				this.mediatorMap.mapView(viewClazzOrName,mediaClazz,injectViewAs,autoCreate,autoRemove);
+				this.mediatorMap.mapView(viewName,mediaClazz,injectViewAs,autoCreate,autoRemove);
 				viewIns && viewIns["stage"] && this.mediatorMap.createMediator(viewIns);
-				this.viewList_.push(viewClazzOrName);
+				this.viewList_.push(viewName);
 			}
 		}
 
 		protected unmapMediator(viewClazzOrName:any)
 		{
-			var i:number = this.viewList_.indexOf(viewClazzOrName);
+			var viewName:string = fl.getClassName(viewClazzOrName);
+			var i:number = this.viewList_.indexOf(viewName);
 			if(i != -1)
 			{
-				this.mediatorMap.unmapView(viewClazzOrName);
+				this.mediatorMap.unmapView(viewName);
 				this.viewList_.splice(i,1);
 			}
 			else
 			{
-				console.log("[unmapMediator] Mediator Class has not been mapped to a View Class in this context - " + viewClazzOrName);
+				console.log("[unmapMediator] Mediator Class has not been mapped to a View Class in this context - " + viewName);
 			}
 		}
 

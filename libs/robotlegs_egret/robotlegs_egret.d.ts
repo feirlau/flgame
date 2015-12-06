@@ -4,6 +4,15 @@ declare module fl {
  * Created by feir on 2015/11/14.
  */
 declare module fl {
+    var P_$UIComponent: string;
+    /**event: eui.UIEvent.CREATION_COMPLETE = "creationComplete" */
+    function isComponentInited(comp: any): boolean;
+    var P_$fl$contextView: string;
+    function injectContextView(comp: any, contextView: any): void;
+    function uninjectContextView(comp: any): void;
+    function getContextView(comp: any): any;
+    /** hook egret.DisplayObject to dispatch egret.Event.ADDED_TO_STAGE to contextView */
+    function hookContextView(comp: any): void;
     function isNumber(value: any): boolean;
     function isString(value: any): boolean;
     function isArray(value: any): boolean;
@@ -48,7 +57,7 @@ declare module fl {
         constructor(weak?: boolean);
         getItem(key: any, val?: any): any;
         setItem(key: any, val: any): any;
-        delItem(key: any): void;
+        delItem(key: any): any;
         hasOwnProperty(key: any): boolean;
     }
 }
@@ -468,16 +477,10 @@ declare module fl {
 declare module fl {
     class Context extends fl.ContextBase implements fl.IContext {
         protected _autoStartup: boolean;
-        protected _commandMap: fl.ICommandMap;
-        protected _mediatorMap: fl.IMediatorMap;
-        protected _viewMap: fl.IViewMap;
         constructor(contextView?: egret.DisplayObjectContainer, autoStartup?: boolean);
         startup(): void;
         shutdown(): void;
         contextView: egret.DisplayObjectContainer;
-        commandMap: fl.ICommandMap;
-        mediatorMap: fl.IMediatorMap;
-        viewMap: fl.IViewMap;
         protected mapInjections(): void;
         protected checkAutoStartup(): void;
         protected onAddedToStage(e: egret.Event): void;
