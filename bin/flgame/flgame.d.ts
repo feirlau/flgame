@@ -134,6 +134,8 @@ declare module fl {
         id: number;
         size: number;
         result: number;
+        protoModel: any;
+        protoValue: any;
         constructor(id: number);
         getBytes(): egret.ByteArray;
         protected toBytes(bytes: egret.ByteArray): void;
@@ -143,6 +145,8 @@ declare module fl {
         readBytes(bytes: egret.ByteArray): void;
         resetBytesPos(bytes: egret.ByteArray): void;
         protected dealError(err: number): void;
+        static readProtoModel(m: any, bytes: egret.ByteArray, length?: number): any;
+        static writeProtoModel(v: any, bytes: egret.ByteArray): egret.ByteArray;
     }
 }
 declare module fl {

@@ -7,7 +7,9 @@ module fl {
 		public id:number = 0;
 		public size:number = 0;
 		public result:number = 0;
-
+		public protoModel:any;
+		public protoValue:any;
+		
 		public constructor(id:number)
 		{
 			super();
@@ -28,6 +30,9 @@ module fl {
 
 		protected toBytes(bytes:egret.ByteArray)
 		{
+			if(this.protoValue) {
+				BasePack.writeProtoModel(this.protoValue, bytes);
+			}
 		}
 
 		public writeBytes(bytes:egret.ByteArray)
@@ -44,6 +49,9 @@ module fl {
 
 		protected fromBytes(bytes:egret.ByteArray)
 		{
+			if(this.protoModel) {
+				this.protoValue = BasePack.readProtoModel(this.protoModel, bytes);
+			}
 		}
 
 		public readBytes(bytes:egret.ByteArray)
@@ -65,5 +73,25 @@ module fl {
 			}
 		}
 
+		public static readProtoModel(m:any, bytes:egret.ByteArray, length:number = -1):any {
+			var v:any;
+			var tmpBytes:egret.ByteArray = new egret.ByteArray();
+			if(length < 0) {
+				length = bytes.readUnsignedInt();
+			} else if(length == 0) {
+				length = bytes.length - bytes.position;
+			}
+			bytes.readBytes(tmpBytes, 0, length);
+			v = m.decode(tmpBytes.buffer);
+			return v;
+		}
+		public static writeProtoModel(v:any, bytes:egret.ByteArray):egret.ByteArray {
+			var tmpBytes:egret.ByteArray = new egret.ByteArray(v.toArrayBuffer());
+			if(bytes) {
+				bytes.writeUnsignedInt(tmpBytes.length);
+				bytes.writeBytes(tmpBytes);
+			}
+			return tmpBytes;
+		}
 	}
 }

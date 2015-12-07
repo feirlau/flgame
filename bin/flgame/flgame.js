@@ -338,24 +338,26 @@ var fl;
             if (injectViewAs === void 0) { injectViewAs = null; }
             if (autoCreate === void 0) { autoCreate = true; }
             if (autoRemove === void 0) { autoRemove = true; }
-            var i = this.viewList_.indexOf(viewClazzOrName);
+            var viewName = fl.getClassName(viewClazzOrName);
+            var i = this.viewList_.indexOf(viewName);
             if (i != -1) {
-                console.log("[mapMediator] Mediator Class has already been mapped to a View Class in this context - " + viewClazzOrName);
+                console.log("[mapMediator] Mediator Class has already been mapped to a View Class in this context - " + viewName);
             }
             else {
-                this.mediatorMap.mapView(viewClazzOrName, mediaClazz, injectViewAs, autoCreate, autoRemove);
+                this.mediatorMap.mapView(viewName, mediaClazz, injectViewAs, autoCreate, autoRemove);
                 viewIns && viewIns["stage"] && this.mediatorMap.createMediator(viewIns);
-                this.viewList_.push(viewClazzOrName);
+                this.viewList_.push(viewName);
             }
         };
         p.unmapMediator = function (viewClazzOrName) {
-            var i = this.viewList_.indexOf(viewClazzOrName);
+            var viewName = fl.getClassName(viewClazzOrName);
+            var i = this.viewList_.indexOf(viewName);
             if (i != -1) {
-                this.mediatorMap.unmapView(viewClazzOrName);
+                this.mediatorMap.unmapView(viewName);
                 this.viewList_.splice(i, 1);
             }
             else {
-                console.log("[unmapMediator] Mediator Class has not been mapped to a View Class in this context - " + viewClazzOrName);
+                console.log("[unmapMediator] Mediator Class has not been mapped to a View Class in this context - " + viewName);
             }
         };
         p.unmapActions = function () {
@@ -631,6 +633,9 @@ var fl;
             return bytes;
         };
         p.toBytes = function (bytes) {
+            if (this.protoValue) {
+                BasePack.writeProtoModel(this.protoValue, bytes);
+            }
         };
         p.writeBytes = function (bytes) {
             this.toBytes(bytes);
@@ -641,6 +646,9 @@ var fl;
             this.dealError(this.result);
         };
         p.fromBytes = function (bytes) {
+            if (this.protoModel) {
+                this.protoValue = BasePack.readProtoModel(this.protoModel, bytes);
+            }
         };
         p.readBytes = function (bytes) {
             this.fromBytes(bytes);
@@ -653,6 +661,28 @@ var fl;
                 fl.eventMgr.dispatchEvent(new fl.GlobalEvent(fl.BasePack.EVENT_PACK_ERR, err));
                 egret.error("[BasePack.dealError] " + this.id + ":" + err);
             }
+        };
+        BasePack.readProtoModel = function (m, bytes, length) {
+            if (length === void 0) { length = -1; }
+            var v;
+            var tmpBytes = new egret.ByteArray();
+            if (length < 0) {
+                length = bytes.readUnsignedInt();
+            }
+            else if (length == 0) {
+                length = bytes.length - bytes.position;
+            }
+            bytes.readBytes(tmpBytes, 0, length);
+            v = m.decode(tmpBytes.buffer);
+            return v;
+        };
+        BasePack.writeProtoModel = function (v, bytes) {
+            var tmpBytes = new egret.ByteArray(v.toArrayBuffer());
+            if (bytes) {
+                bytes.writeUnsignedInt(tmpBytes.length);
+                bytes.writeBytes(tmpBytes);
+            }
+            return tmpBytes;
         };
         BasePack.EVENT_PACK_ERR = "PackErrorEvent";
         BasePack.HEAD_SIZE = 6;
