@@ -25,9 +25,9 @@ declare module fl {
         protected mapProtocols: Array<any>;
         protocols: Array<any>;
         eventDispatcher: egret.IEventDispatcher;
-        process(data: egret.ByteArray, protocol?: number): void;
+        process(data: dcodeIO.ByteBuffer, protocol?: number): void;
         sendPack(pack: fl.BasePack, netId?: string): void;
-        sendBytes(bytes: egret.ByteArray, netId?: string): void;
+        sendBytes(bytes: dcodeIO.ByteBuffer, netId?: string): void;
         dispatchEvent(e: egret.Event): void;
     }
 }
@@ -113,17 +113,17 @@ declare module fl {
         protected notifyClose(): void;
         protected onClose(e: egret.Event): void;
         protected onError(e: egret.IOErrorEvent): void;
-        send(bytes: egret.ByteArray): void;
+        send(bytes: dcodeIO.ByteBuffer): void;
         protected onReceived(e: egret.ProgressEvent): void;
         private processPacks();
         /**
          * decrypt the data if need
          **/
-        protected decryption(bytes: egret.ByteArray): egret.ByteArray;
+        protected decryption(bytes: dcodeIO.ByteBuffer): dcodeIO.ByteBuffer;
         cachCmd(b: boolean): void;
         protected noCachCmd(p: number): boolean;
-        protected processOrCache(protocol: number, data: egret.ByteArray): void;
-        protected processCmd(protocol: number, data: egret.ByteArray): void;
+        protected processOrCache(protocol: number, data: dcodeIO.ByteBuffer): void;
+        protected processCmd(protocol: number, data: dcodeIO.ByteBuffer): void;
     }
 }
 declare module fl {
@@ -137,16 +137,16 @@ declare module fl {
         protoModel: any;
         protoValue: any;
         constructor(id: number);
-        getBytes(): egret.ByteArray;
-        protected toBytes(bytes: egret.ByteArray): void;
-        writeBytes(bytes: egret.ByteArray): void;
-        setBytes(bytes: egret.ByteArray): void;
-        protected fromBytes(bytes: egret.ByteArray): void;
-        readBytes(bytes: egret.ByteArray): void;
-        resetBytesPos(bytes: egret.ByteArray): void;
+        getBytes(): dcodeIO.ByteBuffer;
+        protected toBytes(bytes: dcodeIO.ByteBuffer): void;
+        writeBytes(bytes: dcodeIO.ByteBuffer): void;
+        setBytes(bytes: dcodeIO.ByteBuffer): void;
+        protected fromBytes(bytes: dcodeIO.ByteBuffer): void;
+        readBytes(bytes: dcodeIO.ByteBuffer): void;
+        resetBytesPos(bytes: dcodeIO.ByteBuffer): void;
         protected dealError(err: number): void;
-        static readProtoModel(m: any, bytes: egret.ByteArray, length?: number): any;
-        static writeProtoModel(v: any, bytes: egret.ByteArray): egret.ByteArray;
+        static readProtoModel(m: any, bytes: dcodeIO.ByteBuffer, length?: number): any;
+        static writeProtoModel(v: any, bytes: dcodeIO.ByteBuffer): dcodeIO.ByteBuffer;
     }
 }
 declare module fl {
@@ -166,7 +166,7 @@ declare module fl {
         setNet(net: fl.BaseNet, id?: string): fl.BaseNet;
         removeNet(id?: string): fl.BaseNet;
         sendPack(pack: fl.BasePack, netId?: string): void;
-        sendBytes(bytes: egret.ByteArray, netId?: string): void;
+        sendBytes(bytes: dcodeIO.ByteBuffer, netId?: string): void;
         isLocalNet: boolean;
     }
     var netMgr: fl.NetManager;

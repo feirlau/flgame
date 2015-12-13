@@ -16,52 +16,53 @@ module fl {
 			this.id = id;
 		}
 
-		public getBytes():egret.ByteArray
+		public getBytes():dcodeIO.ByteBuffer
 		{
-			var bytes:egret.ByteArray = new egret.ByteArray();
-			bytes.position = 2;
-			bytes.writeUnsignedInt(this.id);
+			var bytes:dcodeIO.ByteBuffer = new dcodeIO.ByteBuffer().flip();
+			bytes.offset = 2;
+			bytes.writeUint32(this.id);
 			this.toBytes(bytes);
-			bytes.position = 0;
-			this.size = bytes.length - fl.BasePack.HEAD_SIZE;
-			bytes.writeUnsignedShort(this.size);
+			bytes.flip();
+			this.size = bytes.limit - fl.BasePack.HEAD_SIZE;
+			bytes.writeUint16(this.size);
+			bytes.offset = 0;
 			return bytes;
 		}
 
-		protected toBytes(bytes:egret.ByteArray)
+		protected toBytes(bytes:dcodeIO.ByteBuffer)
 		{
 			if(this.protoValue) {
 				BasePack.writeProtoModel(this.protoValue, bytes);
 			}
 		}
 
-		public writeBytes(bytes:egret.ByteArray)
+		public writeBytes(bytes:dcodeIO.ByteBuffer)
 		{
 			this.toBytes(bytes);
 		}
 
-		public setBytes(bytes:egret.ByteArray)
+		public setBytes(bytes:dcodeIO.ByteBuffer)
 		{
-			bytes.position = fl.BasePack.HEAD_SIZE;
+			bytes.offset = fl.BasePack.HEAD_SIZE;
 			this.fromBytes(bytes);
 			this.dealError(this.result);
 		}
 
-		protected fromBytes(bytes:egret.ByteArray)
+		protected fromBytes(bytes:dcodeIO.ByteBuffer)
 		{
 			if(this.protoModel) {
 				this.protoValue = BasePack.readProtoModel(this.protoModel, bytes);
 			}
 		}
 
-		public readBytes(bytes:egret.ByteArray)
+		public readBytes(bytes:dcodeIO.ByteBuffer)
 		{
 			this.fromBytes(bytes);
 		}
 
-		public resetBytesPos(bytes:egret.ByteArray)
+		public resetBytesPos(bytes:dcodeIO.ByteBuffer)
 		{
-			bytes.position = fl.BasePack.HEAD_SIZE;
+			bytes.offset = fl.BasePack.HEAD_SIZE;
 		}
 
 		protected dealError(err:number)
@@ -73,23 +74,24 @@ module fl {
 			}
 		}
 
-		public static readProtoModel(m:any, bytes:egret.ByteArray, length:number = -1):any {
+		public static readProtoModel(m:any, bytes:dcodeIO.ByteBuffer, length:number = -1):any {
 			var v:any;
-			var tmpBytes:egret.ByteArray = new egret.ByteArray();
 			if(length < 0) {
-				length = bytes.readUnsignedInt();
+				length = bytes.readUint32();
 			} else if(length == 0) {
-				length = bytes.length - bytes.position;
+				length = bytes.limit - bytes.offset;
 			}
-			bytes.readBytes(tmpBytes, 0, length);
+			var n:number = bytes.offset + length;
+			var tmpBytes:dcodeIO.ByteBuffer = bytes.copy(bytes.offset, n).flip();
+			bytes.offset = n;
 			v = m.decode(tmpBytes.buffer);
 			return v;
 		}
-		public static writeProtoModel(v:any, bytes:egret.ByteArray):egret.ByteArray {
-			var tmpBytes:egret.ByteArray = new egret.ByteArray(v.toArrayBuffer());
+		public static writeProtoModel(v:any, bytes:dcodeIO.ByteBuffer):dcodeIO.ByteBuffer {
+			var tmpBytes:dcodeIO.ByteBuffer = dcodeIO.ByteBuffer.wrap(v.toArrayBuffer());
 			if(bytes) {
-				bytes.writeUnsignedInt(tmpBytes.length);
-				bytes.writeBytes(tmpBytes);
+				bytes.writeUint32(tmpBytes.limit);
+				bytes.append(tmpBytes);
 			}
 			return tmpBytes;
 		}

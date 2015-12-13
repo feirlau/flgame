@@ -446,7 +446,7 @@ var fl;
             this.socket.addEventListener(egret.ProgressEvent.SOCKET_DATA, this.onReceived, this);
             this.socket.addEventListener(egret.Event.CLOSE, this.onClose, this);
             this.socket.addEventListener(egret.IOErrorEvent.IO_ERROR, this.onError, this);
-            this._receBytes = new egret.ByteArray();
+            this._receBytes = new dcodeIO.ByteBuffer().flip();
             this.open();
         }
         var d = __define,c=BaseNet;p=c.prototype;
@@ -485,7 +485,8 @@ var fl;
         };
         p.send = function (bytes) {
             if (this.socket.connected) {
-                this.socket.writeBytes(bytes, 0, bytes.length);
+                var eb = new egret.ByteArray(bytes.toArrayBuffer());
+                this.socket.writeBytes(eb, 0, eb.length);
                 this.socket.flush();
             }
             else {
@@ -493,59 +494,63 @@ var fl;
             }
         };
         p.onReceived = function (e) {
-            var tempBytes = new egret.ByteArray();
-            this.socket.readBytes(tempBytes);
-            if (tempBytes.length == 0) {
+            var tmpBytes = new egret.ByteArray();
+            this.socket.readBytes(tmpBytes);
+            if (tmpBytes.length == 0) {
                 return;
             }
-            this._receBytes.position = this._receBytes.length;
-            this._receBytes.writeBytes(tempBytes, 0, tempBytes.length);
+            this._receBytes.offset = this._receBytes.limit;
+            this._receBytes.append(tmpBytes.buffer).flip();
             while (this.processPacks())
                 ;
         };
         p.processPacks = function () {
-            var _self__ = this;
-            if (this._receBytes.length < fl.BasePack.HEAD_SIZE) {
+            if (this._receBytes.limit < fl.BasePack.HEAD_SIZE) {
                 return false;
             }
-            this._receBytes.position = 0;
-            var firstPackageLenght = this._receBytes.readUnsignedShort();
+            this._receBytes.offset = 0;
+            var firstPackageLenght = this._receBytes.readUint16();
             firstPackageLenght = firstPackageLenght + fl.BasePack.HEAD_SIZE;
-            if (this._receBytes.length < firstPackageLenght) {
+            if (this._receBytes.limit < firstPackageLenght) {
                 return false;
             }
             if (firstPackageLenght > 2 * fl.BasePack.MAX_PACK_SIZE) {
                 throw new fl.Error("[BaseSocket.processPacks] unknow package size: " + firstPackageLenght);
             }
-            var tmpBytes = new egret.ByteArray();
-            tmpBytes.writeBytes(this._receBytes, 0, fl.BasePack.HEAD_SIZE);
-            var bodyBytes = new egret.ByteArray();
-            if (firstPackageLenght != fl.BasePack.HEAD_SIZE) {
-                bodyBytes.writeBytes(this._receBytes, fl.BasePack.HEAD_SIZE, firstPackageLenght - fl.BasePack.HEAD_SIZE);
+            var tmpBytes = this._receBytes.copy(0, fl.BasePack.HEAD_SIZE).flip();
+            var bodyBytes = new dcodeIO.ByteBuffer().flip();
+            var n = firstPackageLenght - fl.BasePack.HEAD_SIZE;
+            if (n > 0) {
+                this._receBytes.copyTo(bodyBytes, 0, fl.BasePack.HEAD_SIZE, firstPackageLenght);
+                bodyBytes.offset = n;
+                bodyBytes.flip();
             }
-            tmpBytes.position = 2;
-            var protocolNumber = tmpBytes.readUnsignedInt();
+            tmpBytes.offset = 2;
+            var protocolNumber = tmpBytes.readUint32();
             if (protocolNumber >>> 31 == 1) {
                 egret.log("compressed protocol: " + protocolNumber);
                 protocolNumber = protocolNumber & 0x7FFFFFFF;
                 //decryption
                 bodyBytes = this.decryption(bodyBytes);
             }
-            tmpBytes.position = fl.BasePack.HEAD_SIZE;
-            if (bodyBytes.length) {
-                tmpBytes.writeBytes(bodyBytes, 0, bodyBytes.length);
-                tmpBytes.position = fl.BasePack.HEAD_SIZE;
+            tmpBytes.offset = fl.BasePack.HEAD_SIZE;
+            if (bodyBytes.limit) {
+                tmpBytes.mark();
+                tmpBytes.append(bodyBytes).flip();
+                tmpBytes.reset();
             }
             this.processOrCache(protocolNumber, tmpBytes);
             //reset left bytes
-            tmpBytes = new egret.ByteArray();
-            if (this._receBytes.length > firstPackageLenght) {
-                tmpBytes.writeBytes(this._receBytes, firstPackageLenght, this._receBytes.length - firstPackageLenght);
+            tmpBytes = new dcodeIO.ByteBuffer().flip();
+            n = this._receBytes.limit - firstPackageLenght;
+            if (n > 0) {
+                this._receBytes.copyTo(tmpBytes, 0, firstPackageLenght, this._receBytes.limit);
+                tmpBytes.offset = n;
+                tmpBytes.flip();
             }
-            this._receBytes.length = 0;
-            this._receBytes.position = 0;
-            if (tmpBytes.length > 0) {
-                this._receBytes.writeBytes(tmpBytes, 0, tmpBytes.length);
+            this._receBytes.clear().flip();
+            if (tmpBytes.limit > 0) {
+                this._receBytes.append(tmpBytes).flip();
                 return true;
             }
             else {
@@ -623,13 +628,14 @@ var fl;
         }
         var d = __define,c=BasePack;p=c.prototype;
         p.getBytes = function () {
-            var bytes = new egret.ByteArray();
-            bytes.position = 2;
-            bytes.writeUnsignedInt(this.id);
+            var bytes = new dcodeIO.ByteBuffer().flip();
+            bytes.offset = 2;
+            bytes.writeUint32(this.id);
             this.toBytes(bytes);
-            bytes.position = 0;
-            this.size = bytes.length - fl.BasePack.HEAD_SIZE;
-            bytes.writeUnsignedShort(this.size);
+            bytes.flip();
+            this.size = bytes.limit - fl.BasePack.HEAD_SIZE;
+            bytes.writeUint16(this.size);
+            bytes.offset = 0;
             return bytes;
         };
         p.toBytes = function (bytes) {
@@ -641,7 +647,7 @@ var fl;
             this.toBytes(bytes);
         };
         p.setBytes = function (bytes) {
-            bytes.position = fl.BasePack.HEAD_SIZE;
+            bytes.offset = fl.BasePack.HEAD_SIZE;
             this.fromBytes(bytes);
             this.dealError(this.result);
         };
@@ -654,7 +660,7 @@ var fl;
             this.fromBytes(bytes);
         };
         p.resetBytesPos = function (bytes) {
-            bytes.position = fl.BasePack.HEAD_SIZE;
+            bytes.offset = fl.BasePack.HEAD_SIZE;
         };
         p.dealError = function (err) {
             if (err != 0) {
@@ -665,22 +671,23 @@ var fl;
         BasePack.readProtoModel = function (m, bytes, length) {
             if (length === void 0) { length = -1; }
             var v;
-            var tmpBytes = new egret.ByteArray();
             if (length < 0) {
-                length = bytes.readUnsignedInt();
+                length = bytes.readUint32();
             }
             else if (length == 0) {
-                length = bytes.length - bytes.position;
+                length = bytes.limit - bytes.offset;
             }
-            bytes.readBytes(tmpBytes, 0, length);
+            var n = bytes.offset + length;
+            var tmpBytes = bytes.copy(bytes.offset, n).flip();
+            bytes.offset = n;
             v = m.decode(tmpBytes.buffer);
             return v;
         };
         BasePack.writeProtoModel = function (v, bytes) {
-            var tmpBytes = new egret.ByteArray(v.toArrayBuffer());
+            var tmpBytes = dcodeIO.ByteBuffer.wrap(v.toArrayBuffer());
             if (bytes) {
-                bytes.writeUnsignedInt(tmpBytes.length);
-                bytes.writeBytes(tmpBytes);
+                bytes.writeUint32(tmpBytes.limit);
+                bytes.append(tmpBytes);
             }
             return tmpBytes;
         };

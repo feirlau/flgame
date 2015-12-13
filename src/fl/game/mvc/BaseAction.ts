@@ -15,7 +15,7 @@ module fl {
 			return fl.eventMgr;
 		}
 		
-		public process(data:egret.ByteArray,protocol:number = 0)
+		public process(data:dcodeIO.ByteBuffer,protocol:number = 0)
 		{
 		}
 
@@ -24,7 +24,7 @@ module fl {
 			fl.netMgr.sendPack(pack,netId);
 		}
 
-		public sendBytes(bytes:egret.ByteArray,netId:string = "")
+		public sendBytes(bytes:dcodeIO.ByteBuffer,netId:string = "")
 		{
 			fl.netMgr.sendBytes(bytes,netId);
 		}

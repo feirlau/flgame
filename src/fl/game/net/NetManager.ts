@@ -59,7 +59,7 @@ module fl {
 			this.sendBytes(pack.getBytes(),netId);
 		}
 
-		public sendBytes(bytes:egret.ByteArray,netId:string = fl.NetManager.NET_GAME)
+		public sendBytes(bytes:dcodeIO.ByteBuffer,netId:string = fl.NetManager.NET_GAME)
 		{
 			var net:fl.BaseNet = this.getNet(netId);
 			net.send(bytes);
